@@ -1,0 +1,5 @@
+NET "A" LOC = "P11"; #SW0
+NET "B" LOC = "L3"; #SW1
+NET "C" LOC = "K3"; #SW2
+NET "S" LOC = "M5"; #LED0
+NET "T" LOC = "M11"; #LED1

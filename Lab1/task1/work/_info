@@ -1,0 +1,174 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dD:/NB Development/DivCode/FPGA/Course - Design of Digital Systems/Lab1/task1
+Eclock
+Z1 w1410292017
+Z2 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
+Z3 DPx4 ieee 14 std_logic_1164 0 22 eNV`TJ_GofJTzYa?f<@Oe1
+R0
+Z4 8clock.vhd
+Z5 Fclock.vhd
+l0
+L9
+VDi:[U9<AFQ1anK9iQVHFA2
+!s100 e0E8nHV7TCSY<ZhEoS0V61
+Z6 OP;C;10.3c;59
+32
+Z7 !s110 1410898988
+!i10b 1
+Z8 !s108 1410898988.330000
+Z9 !s90 -reportprogress|300|-quiet|clock.vhd|
+Z10 !s107 clock.vhd|
+!i113 1
+Z11 o-quiet -O0
+Z12 tExplicit 1
+Abehaviour
+R2
+R3
+DEx4 work 5 clock 0 22 Di:[U9<AFQ1anK9iQVHFA2
+l15
+L14
+V[;9k_W`6FS65mFeHlU;;S2
+!s100 GHoaoD]YSKNg:U28bCK[^2
+R6
+32
+R7
+!i10b 1
+R8
+R9
+R10
+!i113 1
+R11
+R12
+Eenv
+R1
+Z13 DPx4 ieee 11 numeric_std 0 22 :ASDNFgHXf_ih3J@9F3Ze1
+R2
+R3
+R0
+Z14 8D:/NB Development/DivCode/FPGA/Course - Design of Digital Systems/Lab1/task1/env.vhd
+Z15 FD:/NB Development/DivCode/FPGA/Course - Design of Digital Systems/Lab1/task1/env.vhd
+l0
+L25
+ViUYm[R<?H4OGJ_d6k<S3>0
+!s100 9j618MjnYL;_E>Z>2ogVo0
+R6
+32
+Z16 !s110 1410899355
+!i10b 1
+Z17 !s108 1410899355.111000
+Z18 !s90 -reportprogress|300|-quiet|-O0|D:/NB Development/DivCode/FPGA/Course - Design of Digital Systems/Lab1/task1/env.vhd|
+Z19 !s107 D:/NB Development/DivCode/FPGA/Course - Design of Digital Systems/Lab1/task1/env.vhd|
+!i113 1
+R11
+R12
+Abehaviour
+R13
+R2
+R3
+Z20 DEx4 work 3 env 0 22 iUYm[R<?H4OGJ_d6k<S3>0
+l57
+L44
+Z21 VF5U=CaOkZDhD;ML7@4Le31
+Z22 !s100 EJB0A`DhbzIVD5JEYc^]o3
+R6
+32
+R16
+!i10b 1
+R17
+R18
+R19
+!i113 1
+R11
+R12
+Egcd_sys
+R1
+R13
+R2
+R3
+R0
+8gcd_entity.vhd
+Fgcd_entity.vhd
+l0
+L28
+VRG?g<eh7kZZ^kf4@zH1<90
+!s100 jT]i1DJbJeCaIoZ7_d:zl0
+R6
+32
+!s110 1410898989
+!i10b 1
+!s108 1410898989.749000
+!s90 -reportprogress|300|-quiet|gcd_entity.vhd|
+!s107 gcd_entity.vhd|
+!i113 1
+R11
+R12
+Aspecification
+R13
+R2
+R3
+DEx4 work 7 gcd_sys 0 22 RG?g<eh7kZZ^kf4@zH1<90
+8gcd_spec.vhd
+Fgcd_spec.vhd
+l53
+L52
+Vb2i@FDEbj?OXF?_IzzQ]91
+!s100 TSTGT^]AGMjSGjc1eIEif0
+R6
+32
+!s110 1410898990
+!i10b 1
+!s108 1410898990.078000
+!s90 -reportprogress|300|-quiet|gcd_spec.vhd|
+!s107 gcd_spec.vhd|
+!i113 1
+R11
+R12
+Etestbench
+R1
+R13
+R2
+R3
+R0
+Z23 8test.vhd
+Z24 Ftest.vhd
+l0
+L27
+Vd>WBS3Z[=ZhgUUiPlQ_dR2
+!s100 B:@>PUP3_FS6Skgo=Y=VJ0
+R6
+32
+Z25 !s110 1410898993
+!i10b 1
+Z26 !s108 1410898992.985000
+Z27 !s90 -reportprogress|300|-quiet|test.vhd|
+Z28 !s107 test.vhd|
+!i113 1
+R11
+R12
+Astructure
+R13
+R2
+R3
+DEx4 work 9 testbench 0 22 d>WBS3Z[=ZhgUUiPlQ_dR2
+l62
+L35
+V0XhhJ[z^LRHhbT[nYPSUh0
+!s100 goTmE2IKjoVGIdEb]lK=J2
+R6
+32
+R25
+!i10b 1
+R26
+R27
+R28
+!i113 1
+R11
+R12

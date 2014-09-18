@@ -41,3 +41,28 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# C02203 project specific
+
+#files
+*.*
+transcript
+
+!.*
+!*.vhd
+!*.ucf
+!*.do
+
+!*.tex
+!*.bib
+!*.dia
+!*.svg
+!*.pdf
+!*.gv
+
+# Xilinx project file
+!*.xise
+!*.bit
+
+# ModelSim project file
+!*.mpf

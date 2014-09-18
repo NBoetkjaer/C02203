@@ -1,0 +1,35 @@
+digraph G 
+{
+	rankdir= "LR"
+	node [shape = circle];
+	forcelabels=true;
+	InputA [shape =doublecircle];
+	DoneA [ xlabel= "regA<=AB"];
+	InputB;
+	DoneB [ xlabel= "regB<=AB"];
+
+	done  [ xlabel= "regC<=regA", dir=top];
+	updateA  [ xlabel= "regA<=regA-regB"];
+	updateB  [ xlabel= "regB<=regB-regA"];
+
+	InputA -> InputA [ label = "req=0" ]
+	InputA -> DoneA [ label = "req =1" ]
+
+	DoneA -> DoneA [ label = "req =1" ]
+	DoneA -> InputB [ label = "req =0" ]
+
+	InputB -> InputB [ label = "req = 0" ]
+	InputB -> DoneB [ label = "req =1" ]
+
+	DoneB -> cmpAB
+
+	cmpAB -> updateA [  label = "regA>regB" ]
+	updateA -> cmpAB
+
+	cmpAB-> done  [ label = "regA=regB" ]
+	done -> InputA
+
+	cmpAB-> updateB [  label = "regA<regB" ]
+	updateB -> cmpAB
+	
+}
