@@ -31,8 +31,8 @@ END gcd;
 architecture FSMD of gcd is
 
 type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateA, UpdateB, DoneC ); -- Input your own state names
-signal reg_a,next_reg_a,next_reg_b,reg_b : unsigned(7 downto 0) := (others => '0');
-signal state, next_state : state_type := InputA; 
+signal reg_a,next_reg_a,next_reg_b,reg_b : unsigned(7 downto 0);
+signal state, next_state : state_type; 
 
 begin
 
@@ -42,7 +42,7 @@ begin
 		next_reg_a <= reg_a;
 		next_reg_b <= reg_b;
 		ack <= '0';
-	  C <= reg_a;
+	  
 		-- C <= (others =>'0');
 		case (state) is
 		When InputA =>
@@ -76,12 +76,12 @@ begin
 			next_state <= CmpAB;
 		  
 		When CmpAB => 
-			if reg_a > reg_b then
-				next_state <= UpdateA;
-			elsif  reg_a < reg_b then
-				next_state <= UpdateB;
-			else -- A = B
+			if reg_a = reg_b then
 				next_state <= DoneC;
+			elsif reg_a > reg_b then
+				next_state <= UpdateA;
+			else
+				next_state <= UpdateB; -- A < B
 			end if;  
 		  
 		When UpdateA =>
@@ -105,7 +105,6 @@ begin
 	end process CL; 
 
 	-- Registers
-
 	seq: process (clk, reset)
 	begin
 		if reset = '1' then
@@ -115,9 +114,11 @@ begin
 			reg_a <= next_reg_a;
 			reg_b <= next_reg_b;
 		end if;
-		
 	end process seq;
-
+	
+	
+	-- Output
+	C <= reg_a;
 
 end fsmd;
 
