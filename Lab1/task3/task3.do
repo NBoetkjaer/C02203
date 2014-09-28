@@ -1,4 +1,4 @@
-## ##############################################################
+################################################################
 ##
 ##	Title		: Compilation and simulation
 ##
@@ -25,14 +25,14 @@ vlib work
 # should be compiled first.
 ################################################################
 
-vcom -quiet ../task1/clock.vhd
+vcom -quiet clock.vhd
 vcom -quiet debounce_entity.vhd
 vcom -quiet debounce_sim.vhd
-vcom -quiet gcd.vhd
-vcom -quiet ../task1/gcd_entity.vhd
+vcom -quiet gcd_optim.vhd
+vcom -quiet gcd_entity.vhd
 vcom -quiet gcd_sys.vhd
-vcom -quiet ../task1/env.vhd
-vcom -quiet ../task1/test.vhd
+vcom -quiet env.vhd
+vcom -quiet test.vhd
 
 # The -quiet option disables output from the vcom command
 # that is not error or warning messages.

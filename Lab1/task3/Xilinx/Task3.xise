@@ -62,6 +62,8 @@
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="3"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="3"/>
     </file>
+    <file xil_pn:name="../gcd_optim.vhd" xil_pn:type="FILE_VHDL"/>
+    <file xil_pn:name="../gcd_res_shr.vhd" xil_pn:type="FILE_VHDL"/>
   </files>
 
   <properties>
