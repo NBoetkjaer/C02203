@@ -40,8 +40,6 @@ signal state, next_state : state_type;
 
 begin
 
-	
-
 	-- Combinatoriel logic
 	CL: process (req,AB,state,reg_a,reg_b, shift_reg, diff, op1, op2, reset)
 	begin
@@ -92,29 +90,12 @@ begin
 				next_reg_b <= ('0' & reg_b(7 downto 1));
 				next_shift_reg <= shift_reg + 1;
 				next_state <= CmpAB;
-				
---			elsif reg_a(0) = '1' and reg_b(0) = '1' then -- Both A and B is odd.
---				if reg_a = reg_b then
---					next_reg_a <= reg_a sll shift_reg;
---					next_state <= DoneC;
---				elsif reg_a > reg_b then
---					next_state <= UpdateA;
---				else 
---					next_state <= UpdateB;
---				end if;				
---			elsif reg_a(0) = '1' then -- A is odd (B must be even)
---				next_reg_b <= ('0' & reg_b(7 downto 1));
---				next_state <= CmpAB;
---			else -- A is even and B is odd.
---				next_reg_a <= ('0' & reg_a(7 downto 1));
---				next_state <= CmpAB;
---			end if;
-				
+		
 			elsif reg_a(0) = '1' and reg_b(0) = '1' then -- Both A and B is odd.
 				if diff(8) = '1' then -- If sign bit is set op2 > op1
 					next_state <= UpdateB;
 				elsif diff(7 downto 0) = 0 then
-					next_reg_a <= reg_a sll shift_reg;
+					next_reg_a <= reg_a sll shift_reg; -- shift result back 
 					next_state <= DoneC;
 				else 
 					next_state <= UpdateA;
@@ -131,14 +112,12 @@ begin
 			op1 <= signed('0' & std_logic_vector(reg_a));
 			op2 <= signed('0' & std_logic_vector(reg_b));		
 			next_reg_a <= ('0' & unsigned(diff(7 downto 1)));
---			next_reg_a <= (reg_a - reg_b) srl 1;
 			next_state <= CmpAB;
 		  
 		When UpdateB =>
 			op1 <= signed('0' & std_logic_vector(reg_b));
 			op2 <= signed('0' & std_logic_vector(reg_a));
 			next_reg_b <= ('0' & unsigned(diff(7 downto 1)));
---			next_reg_b <= (reg_b - reg_a) srl 1;
 			next_state <= CmpAB;				
 		When DoneC =>
 			ack <= '1';
