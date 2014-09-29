@@ -45,8 +45,10 @@ begin
 		next_reg_a <= reg_a;
 		next_reg_b <= reg_b;
 		ack <= '0';
-		op1 <= (others => '0');
-		op2 <= (others => '0');
+--		op1 <= (others => '0');
+--		op2 <= (others => '0');
+		op1 <= signed('0' & std_logic_vector(reg_a));
+		op2 <= signed('0' & std_logic_vector(reg_b));		
 		diff <= op1 - op2;
 		
 		case (state) is

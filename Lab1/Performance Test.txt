@@ -32,25 +32,26 @@ GCD(FSMD_res_sharing)
 
 	inferred   1 Adder/Subtractor(s).
 	inferred  16 D-type flip-flop(s).
-	inferred   6 Multiplexer(s).
+	inferred   4 Multiplexer(s).
 	inferred   1 Finite State Machine(s).
 
 Slice Logic Utilization: 
- Number of Slice Registers:              48  out of  18224     0%  
+ Number of Slice Registers:              47  out of  18224     0%  
  Number of Slice LUTs:                   96  out of   9112     1%  
     Number used as Logic:                96  out of   9112     1%  
 
 Module Leve Utilization:
-	slice reg	22
+	slices		18
+	slice reg	21
 	LUTs		34
 	
 Timing Summary:
 ---------------
 Speed Grade: -3
 
-   Minimum period: 4.558ns (Maximum Frequency: 219.373MHz)
-   Minimum input arrival time before clock: 4.213ns
-   Maximum output required time after clock: 5.201ns
+   Minimum period: 4.400ns (Maximum Frequency: 227.288MHz)
+   Minimum input arrival time before clock: 4.199ns
+   Maximum output required time after clock: 5.184ns
    Maximum combinational path delay: No path found
 
 
