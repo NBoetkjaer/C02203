@@ -28,7 +28,7 @@ ENTITY gcd IS
           C:        OUT unsigned(7 downto 0));	-- The result.  
 END gcd;
 
-architecture FSMD of gcd is
+architecture FSMD_binary of gcd is
 
 type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateA, UpdateB, DoneC ); -- Input your own state names
 signal reg_a,next_reg_a, next_reg_b,reg_b: unsigned(7 downto 0);
@@ -147,5 +147,5 @@ begin
 	-- Output 
 	C <= reg_a;
 	
-end fsmd;
+end fsmd_binary;
 

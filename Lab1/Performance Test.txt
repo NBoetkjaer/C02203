@@ -1,0 +1,144 @@
+-------------------------------
+GCD(FSMD_io)  - task 2 (reference)
+-------------------------------	
+	inferred   2 Adder/Subtractor(s).
+	inferred  16 D-type flip-flop(s).
+	inferred   2 Comparator(s).
+	inferred   2 Multiplexer(s).
+	inferred   1 Finite State Machine(s).
+   
+Slice Logic Utilization: 
+ Number of Slice Registers:              46  out of  18224     0%  
+ Number of Slice LUTs:                   97  out of   9112     1%  
+    Number used as Logic:                97  out of   9112     1%  
+
+	
+Module Leve Utilization:
+	slice reg	20
+	LUTs		28		
+	
+Timing Summary:
+---------------
+Speed Grade: -3
+
+   Minimum period: 4.401ns (Maximum Frequency: 227.221MHz)
+   Minimum input arrival time before clock: 4.185ns
+   Maximum output required time after clock: 5.184ns
+   Maximum combinational path delay: No path found	
+
+-------------------------------
+GCD(FSMD_res_sharing)
+-------------------------------
+
+	inferred   1 Adder/Subtractor(s).
+	inferred  16 D-type flip-flop(s).
+	inferred   6 Multiplexer(s).
+	inferred   1 Finite State Machine(s).
+
+Slice Logic Utilization: 
+ Number of Slice Registers:              48  out of  18224     0%  
+ Number of Slice LUTs:                   96  out of   9112     1%  
+    Number used as Logic:                96  out of   9112     1%  
+
+Module Leve Utilization:
+	slice reg	22
+	LUTs		34
+	
+Timing Summary:
+---------------
+Speed Grade: -3
+
+   Minimum period: 4.558ns (Maximum Frequency: 219.373MHz)
+   Minimum input arrival time before clock: 4.213ns
+   Maximum output required time after clock: 5.201ns
+   Maximum combinational path delay: No path found
+
+
+
+-------------------------------
+GCD(FSMD_res_sharing) mux share
+-------------------------------
+	inferred   1 Adder/Subtractor(s).
+	inferred  16 D-type flip-flop(s).
+	inferred   3 Multiplexer(s).
+	inferred   1 Finite State Machine(s).
+
+Slice Logic Utilization: 
+ Number of Slice Registers:              49  out of  18224     0%  
+ Number of Slice LUTs:                   88  out of   9112     0%  
+    Number used as Logic:                88  out of   9112 	
+	
+Module Leve Utilization:
+	slice reg	22
+	LUTs		34
+
+Timing Summary:
+---------------
+Speed Grade: -3
+
+   Minimum period: 4.316ns (Maximum Frequency: 231.707MHz)
+   Minimum input arrival time before clock: 4.130ns
+   Maximum output required time after clock: 5.097ns
+   Maximum combinational path delay: No path found
+   
+-------------------------------
+GCD(FSMD_binary)
+-------------------------------	
+	inferred   2 Adder/Subtractor(s).
+	inferred  19 D-type flip-flop(s).
+	inferred   9 Multiplexer(s).
+	inferred   1 Combinational logic shifter(s).
+	inferred   1 Finite State Machine(s).
+
+Slice Logic Utilization: 	
+ Number of Slice Registers:              54  out of  18224     0%  
+ Number of Slice LUTs:                  147  out of   9112     1%  
+    Number used as Logic:               147  out of   9112     1%  
+	
+Module Leve Utilization:
+	slice reg	30
+	LUTs		88	
+	
+Timing Summary:
+---------------
+Speed Grade: -3
+
+   Minimum period: 5.182ns (Maximum Frequency: 192.970MHz)
+   Minimum input arrival time before clock: 4.276ns
+   Maximum output required time after clock: 5.450ns
+   Maximum combinational path delay: No path found	
+	
+	
+-------------------------------
+GCD(FSMD_optim)
+-------------------------------	
+	inferred   2 Adder/Subtractor(s).
+	inferred  16 D-type flip-flop(s).
+	inferred   2 Multiplexer(s).
+	inferred   1 Finite State Machine(s).
+	
+Slice Logic Utilization: 
+ Number of Slice Registers:              45  out of  18224     0%  
+ Number of Slice LUTs:                  122  out of   9112     1%  
+    Number used as Logic:               122  out of   9112 	
+	
+Module Leve Utilization:
+	slice reg	19
+	LUTs		61		
+
+Timing Summary:
+---------------
+Speed Grade: -3
+
+   Minimum period: 4.458ns (Maximum Frequency: 224.333MHz)
+   Minimum input arrival time before clock: 5.321ns
+   Maximum output required time after clock: 5.253ns
+   Maximum combinational path delay: No path found	
+
+   
+
+   
+============================================   
+Worst case number 251 and 252
+GCD(FSMD_res_sharing) mux share: 5.2 usec 
+GCD(FSMD_binary): 370 ns

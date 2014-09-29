@@ -55,6 +55,7 @@ work
 !*.ucf
 !*.do
 
+!*.txt
 !*.tex
 !*.bib
 !*.dia
