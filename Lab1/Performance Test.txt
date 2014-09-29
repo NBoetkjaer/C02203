@@ -13,7 +13,8 @@ Slice Logic Utilization:
     Number used as Logic:                97  out of   9112     1%  
 
 	
-Module Leve Utilization:
+Module Level Utilization:
+	slices		9
 	slice reg	20
 	LUTs		28		
 	
@@ -40,7 +41,7 @@ Slice Logic Utilization:
  Number of Slice LUTs:                   96  out of   9112     1%  
     Number used as Logic:                96  out of   9112     1%  
 
-Module Leve Utilization:
+Module Level Utilization:
 	slices		18
 	slice reg	21
 	LUTs		34
@@ -70,7 +71,8 @@ Slice Logic Utilization:
     Number used as Logic:                88  out of   9112 	
 	
 Module Leve Utilization:
-	slice reg	22
+	slices		16
+	slice reg	23
 	LUTs		34
 
 Timing Summary:
@@ -96,7 +98,8 @@ Slice Logic Utilization:
  Number of Slice LUTs:                  147  out of   9112     1%  
     Number used as Logic:               147  out of   9112     1%  
 	
-Module Leve Utilization:
+Module Level Utilization:
+	slices		32
 	slice reg	30
 	LUTs		88	
 	
@@ -123,7 +126,8 @@ Slice Logic Utilization:
  Number of Slice LUTs:                  122  out of   9112     1%  
     Number used as Logic:               122  out of   9112 	
 	
-Module Leve Utilization:
+Module Level Utilization:
+	slices		18
 	slice reg	19
 	LUTs		61		
 
