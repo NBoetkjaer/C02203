@@ -67,85 +67,109 @@ COMPONENT alu IS
 			N		: OUT std_logic);				-- Result negative flag.
 END COMPONENT;
 
-type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateA, UpdateB, DoneC ); -- Input your own state names
-
+type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, ALUcompute, CmpAB, UpdateA, UpdateB, DoneC ); -- Input your own state names
+----------------------------
+-- Declare signals
+----------------------------
 signal state, next_state : state_type; 
 
-signal Z, N: std_logic;
-signal fn: std_logic_vector(1 downto 0);
-signal A, B, C_int: std_logic_vector(7 downto 0);
-signal Y9 : std_logic_vector(8 downto 0);	
-	alias Y: std_logic_vector(7 downto 0) is Y9(7 downto 0);
+signal ABorALU, LDA, LDB, Z, N, C_ready: std_logic;
+signal fn: signed(1 downto 0);
+signal A, B, Y, C_int: unsigned(7 downto 0);
+signal A9, B9,Y9 : signed(8 downto 0);	
 
 begin
+
+	Y <= unsigned( Y9(7 downto 0) );
+	A9 <= signed( '0' & A);
+	B9 <= signed( '0' & B);
 ----------------------------
 -- Connect all components
 ----------------------------
-	alu1	: alu GENERIC MAP (w => 9) PORT MAP (A=>('0' & A), B=>('0' & B), fn=>fn, C=>Y9, Z=>Z, N=>N);
---	reg_a	: reg PORT MAP (clk=>, en=>, data_in=>, data_out=>);
---	reg_b	: reg PORT MAP (clk=>, en=>, data_in=>, data_out=>);
---	mux1	: mux PORT MAP (data_in1=>, data_in2=>, s=>, data_out=>);
---	tribuf: tri PORT MAP (data_in=>, data_out=>, en=>);
+	alu1	: alu GENERIC MAP (w => 9) PORT MAP (A=>A9, B=>B9, fn=>fn, C=>Y9, Z=>Z, N=>N);
+	reg_a	: reg PORT MAP (clk=>clk, en=>LDA, data_in=>C_int, data_out=>A);
+	reg_b	: reg PORT MAP (clk=>clk, en=>LDB, data_in=>C_int, data_out=>B);
+	mux1	: mux PORT MAP (data_in1=>Y, data_in2=>AB, s=>ABorALU, data_out=>C_int);
+	tribuf: tri PORT MAP (data_in=>C_int, data_out=>C, en=>C_ready);
 
---	-- Combinatoriel logic
---	CL: process (req, AB, state, reset)
---	begin
---		ack <= '0';
---		
---		case (state) is
---		
---		When InputA =>
---			if req = '1' then
---				next_state <= LoadA;
---			else
---				next_state <= InputA;
---			end if;
---		  
---		When LoadA =>  
---			next_state <= RegAdone;			
---		When RegAdone =>
---			ack <= '1';
---			if req = '0' then
---				next_state <= InputB;
---			else
---				next_state <= RegAdone;
---			end if;      
---		
---		When InputB =>
---			if req = '1' then
---				next_state <= LoadB;
---			else
---				next_state <= InputB;
---			end if;     
---		  
---		When LoadB=>
---			next_state <= CmpAB;
---		  
---		When CmpAB =>
---			if N = '1' then -- If sign bit is ...
---				next_state <= UpdateB;
---			elsif Z = 0 then
---				next_state <= DoneC;
---			else 
---				next_state <= UpdateA;
---			end if;
---
---		When UpdateA =>
---			next_state <= CmpAB;
---		  
---		When UpdateB =>
---			next_state <= CmpAB;
---				
---		When DoneC =>
---			ack <= '1';
---			if req = '0' then
---				next_state <= InputA;
---			else
---				next_state <= DoneC;
---			end if;  
---			
---	   end case;      
---	end process CL; 
+	-- Combinatoriel logic
+	CL: process (req, AB, state, reset)
+	begin
+		ack <= '0';
+		ABorALU <= '0';
+		LDA <= '0';
+		LDB <= '0';
+		fn <= "00";
+		C_ready <= '0';
+		
+		case (state) is
+			
+			When InputA =>
+				if req = '1' then
+					next_state <= LoadA;
+				else
+					next_state <= InputA;
+				end if;
+			  
+			When LoadA =>  
+				ABorALU <= '1';
+				LDA <= '1';
+				next_state <= RegAdone;	
+				
+			When RegAdone =>
+				ack <= '1';
+				if req = '0' then
+					next_state <= InputB;
+				else
+					next_state <= RegAdone;
+				end if;      
+			
+			When InputB =>
+				if req = '1' then
+					next_state <= LoadB;
+				else
+					next_state <= InputB;
+				end if;     
+			  
+			When LoadB=>
+				ABorALU <= '1';
+				LDB <= '1';			
+				next_state <= ALUcompute;
+				
+			When ALUcompute=>
+				next_state <= CmpAB;
+				
+			When CmpAB =>
+				fn <= "00";
+				if Z = '1' then -- (A - B) = 0; we're done
+					next_state <= DoneC;					
+				elsif N = '1' then -- If sign bit is set then A < B
+					next_state <= UpdateB;
+				else 
+					next_state <= UpdateA;
+				end if;
+
+			When UpdateA =>
+				fn <= "00";
+				LDA <= '1';	
+				next_state <= ALUcompute;
+			  
+			When UpdateB =>
+				fn <= "01";
+				LDB <= '1';	
+				next_state <= ALUcompute;
+					
+			When DoneC =>
+				C_ready <= '1';
+				ack <= '1'; 
+				fn <= "10"; -- Pass register directly trough the ALU 
+				if req = '0' then
+					next_state <= InputA;
+				else
+					next_state <= DoneC;
+				end if;  				
+	   end case;      
+	end process CL; 
 
 	-- Registers
 
