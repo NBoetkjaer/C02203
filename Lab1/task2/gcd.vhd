@@ -42,64 +42,64 @@ begin
 		next_reg_a <= reg_a;
 		next_reg_b <= reg_b;
 		ack <= '0';
-	  
-		-- C <= (others =>'0');
-		case (state) is
-		When InputA =>
-			if req = '1' then
-				next_state <= LoadA;
-			else
-				next_state <= InputA;
-			end if;
-		  
-		When LoadA =>  
-			next_state <= RegAdone;
-			next_reg_a <= AB;
-			
-		When RegAdone =>
-			ack <= '1';
-			if req = '0' then
-				next_state <= InputB;
-			else
-				next_state <= RegAdone;
-			end if;      
+		C <= (others =>'Z');
 		
-		When InputB =>
-			if req = '1' then
-				next_state <= LoadB;
-			else
-				next_state <= InputB;
-			end if;     
-		  
-		When LoadB=>
-			next_reg_b <= AB;
-			next_state <= CmpAB;
-		  
-		When CmpAB => 
-			if reg_a = reg_b then
-				next_state <= DoneC;
-			elsif reg_a > reg_b then
-				next_state <= UpdateA;
-			else
-				next_state <= UpdateB; -- A < B
-			end if;  
-		  
-		When UpdateA =>
-			next_reg_a <= reg_a - reg_b;
-			next_state <= CmpAB;
-		  
-		When UpdateB =>
-			next_reg_b <= reg_b - reg_a;
-			next_state <= CmpAB;
-				
-		When DoneC =>
-			--  C <= reg_a;
-			ack <= '1';
-			if req = '0' then
-				next_state <= InputA;
-			else
-				next_state <= DoneC;
-			end if;  
+		case (state) is
+			When InputA =>
+				if req = '1' then
+					next_state <= LoadA;
+				else
+					next_state <= InputA;
+				end if;
+
+			When LoadA =>  
+				next_state <= RegAdone;
+				next_reg_a <= AB;
+
+			When RegAdone =>
+				ack <= '1';
+				if req = '0' then
+					next_state <= InputB;
+				else
+					next_state <= RegAdone;
+				end if;      
+			
+			When InputB =>
+				if req = '1' then
+					next_state <= LoadB;
+				else
+					next_state <= InputB;
+				end if;     
+			  
+			When LoadB=>
+				next_reg_b <= AB;
+				next_state <= CmpAB;
+			  
+			When CmpAB => 
+				if reg_a = reg_b then
+					next_state <= DoneC;
+				elsif reg_a > reg_b then
+					next_state <= UpdateA;
+				else
+					next_state <= UpdateB; -- A < B
+				end if;  
+			  
+			When UpdateA =>
+				next_reg_a <= reg_a - reg_b;
+				next_state <= CmpAB;
+			  
+			When UpdateB =>
+				next_reg_b <= reg_b - reg_a;
+				next_state <= CmpAB;
+					
+			When DoneC =>
+				C <= reg_a;
+				ack <= '1';
+				if req = '0' then
+					next_state <= InputA;
+				else
+					next_state <= DoneC;
+				end if;  
 			
 	   end case;      
 	end process CL; 
@@ -116,9 +116,5 @@ begin
 		end if;
 	end process seq;
 	
-	
-	-- Output
-	C <= reg_a;
-
 end fsmd;
 

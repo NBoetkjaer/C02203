@@ -36,23 +36,24 @@ type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB
 
 signal reg_a,next_reg_a,next_reg_b,reg_b : unsigned(7 downto 0);
 
-signal op1, op2, diff : signed(8 downto 0);
-signal m1 : unsigned (7 downto 0);
+signal op1, op2, Y : signed(8 downto 0);
+signal C_int : unsigned (7 downto 0);
 signal state, next_state : state_type; 
 signal ABorALU, LDA, LDB : std_logic;
 begin
 
 	with ABorALU select 
-		m1 <=	unsigned(diff(7 downto 0)) when '0',
+		C_int <=	unsigned(Y(7 downto 0)) when '0',
 				AB when others;
 				
-	next_reg_a <=	m1 when LDA = '1' else reg_a;
-	next_reg_b <=	m1 when LDB = '1' else reg_b;			
+	next_reg_a <=	C_int when LDA = '1' else reg_a;
+	next_reg_b <=	C_int when LDB = '1' else reg_b;			
 				
-	diff <= op1 - op2;
+	Y <= op1 - op2;
 	-- Combinatoriel logic
-	CL: process (req,AB,state,reg_a,reg_b, m1, diff, reset)
+	CL: process (req, AB, state, reg_a, reg_b, C_int, Y, reset)
 	begin
+		C <= (others =>'Z');
 		ABorALU <= '0';
 		LDA <= '0';
 		LDB <= '0';
@@ -95,9 +96,9 @@ begin
 			next_state <= CmpAB;
 		  
 		When CmpAB =>
-			if diff(8) = '1' then -- If sign bit is set op2 > op1		
+			if Y(8) = '1' then -- If sign bit is set op2 > op1		
 				next_state <= UpdateB;
-			elsif diff(7 downto 0) = 0 then
+			elsif Y(7 downto 0) = 0 then
 				next_state <= DoneC;
 			else 			
 				next_state <= UpdateA;
@@ -117,11 +118,13 @@ begin
 				
 		When DoneC =>
 			ack <= '1';
+			C <= reg_a;
 			if req = '0' then
 				next_state <= InputA;
 			else
 				next_state <= DoneC;
 			end if;  
+			
 			
 	   end case;      
 	end process CL; 
@@ -140,7 +143,7 @@ begin
 	end process seq;
 	
 	-- Output 
-	C <= reg_a;
+	
 	
 end FSMD_res_sharing;
 

@@ -66,8 +66,10 @@ COMPONENT alu IS
 			Z		: OUT std_logic;				-- Result = 0 flag.
 			N		: OUT std_logic);				-- Result negative flag.
 END COMPONENT;
-
-type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, ALUcompute, CmpAB, UpdateA, UpdateB, DoneC ); -- Input your own state names
+----------------------------
+-- Define FSMD states 
+----------------------------
+type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, ALUcompute, CmpAB, UpdateB, DoneC );
 ----------------------------
 -- Declare signals
 ----------------------------
@@ -79,7 +81,6 @@ signal A, B, Y, C_int: unsigned(7 downto 0);
 signal A9, B9,Y9 : signed(8 downto 0);	
 
 begin
-
 	Y <= unsigned( Y9(7 downto 0) );
 	A9 <= signed( '0' & A);
 	B9 <= signed( '0' & B);
@@ -93,7 +94,7 @@ begin
 	tribuf: tri PORT MAP (data_in=>C_int, data_out=>C, en=>C_ready);
 
 	-- Combinatoriel logic
-	CL: process (req, AB, state, reset)
+	CL: process (req, AB, Z, N, state, reset)
 	begin
 		ack <= '0';
 		ABorALU <= '0';
@@ -140,19 +141,14 @@ begin
 				next_state <= CmpAB;
 				
 			When CmpAB =>
-				fn <= "00";
 				if Z = '1' then -- (A - B) = 0; we're done
 					next_state <= DoneC;					
-				elsif N = '1' then -- If sign bit is set then A < B
+				elsif N = '1' then -- If sign bit is set then A < B.
 					next_state <= UpdateB;
-				else 
-					next_state <= UpdateA;
+				else -- Directly update A, result is already on ALU output.
+					LDA <= '1';	
+					next_state <= ALUcompute;
 				end if;
-
-			When UpdateA =>
-				fn <= "00";
-				LDA <= '1';	
-				next_state <= ALUcompute;
 			  
 			When UpdateB =>
 				fn <= "01";

@@ -63,6 +63,12 @@ BEGIN
     	VARIABLE a_operants : Operants := (91, 17, 49, 81, 25);
     	VARIABLE b_operants : Operants := (63, 11, 98, 45,  5);
 		VARIABLE c_results  : Operants := ( 7,  1, 49,  9,  5);
+    	-- Exercise all 8 bit (251 is a prime number (and 251 and 252 differs by only one) -> worst case)
+--		VARIABLE a_operants : Operants := (252, 17, 49, 81, 25);
+--    VARIABLE b_operants : Operants := (251, 11, 98, 45,  5);
+--		VARIABLE c_results  : Operants := ( 1,  1, 49,  9,  5);		
+		
+		
     	VARIABLE test_number : INTEGER := 0;
     BEGIN
         CASE current_state IS

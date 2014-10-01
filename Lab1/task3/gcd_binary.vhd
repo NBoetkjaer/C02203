@@ -31,25 +31,25 @@ END gcd;
 architecture FSMD_binary of gcd is
 
 type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateA, UpdateB, DoneC ); -- Input your own state names
+signal state, next_state : state_type; 
+
 signal reg_a,next_reg_a, next_reg_b,reg_b: unsigned(7 downto 0);
 signal next_shift_reg, shift_reg : integer range 0 to 7;
-
 signal op1, op2, diff : signed(8 downto 0);
-
-signal state, next_state : state_type; 
 
 begin
 
+	diff <= op1 - op2;
 	-- Combinatoriel logic
-	CL: process (req,AB,state,reg_a,reg_b, shift_reg, diff, op1, op2, reset)
+	CL: process (req,AB,state,reg_a,reg_b, shift_reg, diff, reset)
 	begin
+		C <= (others =>'Z');
 		next_reg_a <= reg_a;
 		next_reg_b <= reg_b;
 		next_shift_reg <= shift_reg;
 		ack <= '0';
 		op1 <= signed('0' & std_logic_vector(reg_a));
 		op2 <= signed('0' & std_logic_vector(reg_b));
-		diff <= op1 - op2;
 		
 		case (state) is
 		
@@ -86,41 +86,42 @@ begin
 		  
 		When CmpAB =>
 			if reg_a(0) = '0' and reg_b(0) = '0' then -- Both A and B is even.
-				next_reg_a <= ('0' & reg_a(7 downto 1));
-				next_reg_b <= ('0' & reg_b(7 downto 1));
+				next_reg_a <= ('0' & reg_a(7 downto 1)); -- divide by 2.
+				next_reg_b <= ('0' & reg_b(7 downto 1)); -- divide by 2.
 				next_shift_reg <= shift_reg + 1;
 				next_state <= CmpAB;
 		
 			elsif reg_a(0) = '1' and reg_b(0) = '1' then -- Both A and B is odd.
-				if diff(8) = '1' then -- If sign bit is set op2 > op1
+				if diff(8) = '1' then -- If sign bit is set op2 > op1.
 					next_state <= UpdateB;
 				elsif diff(7 downto 0) = 0 then
-					next_reg_a <= reg_a sll shift_reg; -- shift result back 
+					next_reg_a <= reg_a sll shift_reg; -- shift result back.
 					next_state <= DoneC;
 				else 
 					next_state <= UpdateA;
 				end if;				
 			elsif reg_a(0) = '1' then -- A is odd (B must be even)
-				next_reg_b <= ('0' & reg_b(7 downto 1));
+				next_reg_b <= ('0' & reg_b(7 downto 1)); -- divide by 2.
 				next_state <= CmpAB;
 			else -- A is even and B is odd.
-				next_reg_a <= ('0' & reg_a(7 downto 1));
+				next_reg_a <= ('0' & reg_a(7 downto 1)); -- divide by 2.
 				next_state <= CmpAB;
 			end if;
 		
 		When UpdateA =>
 			op1 <= signed('0' & std_logic_vector(reg_a));
-			op2 <= signed('0' & std_logic_vector(reg_b));		
-			next_reg_a <= ('0' & unsigned(diff(7 downto 1)));
+			op2 <= signed('0' & std_logic_vector(reg_b));	
+			next_reg_a <= ('0' & unsigned(diff(7 downto 1))); -- divide by 2.
 			next_state <= CmpAB;
 		  
 		When UpdateB =>
 			op1 <= signed('0' & std_logic_vector(reg_b));
 			op2 <= signed('0' & std_logic_vector(reg_a));
-			next_reg_b <= ('0' & unsigned(diff(7 downto 1)));
+			next_reg_b <= ('0' & unsigned(diff(7 downto 1))); -- divide by 2.
 			next_state <= CmpAB;				
 		When DoneC =>
 			ack <= '1';
+			C <= reg_a;
 			if req = '0' then
 				next_state <= InputA;
 			else
@@ -131,7 +132,6 @@ begin
 	end process CL; 
 
 	-- Registers
-
 	seq: process (clk, reset)
 	begin
 		if reset = '1' then
@@ -143,9 +143,5 @@ begin
 			shift_reg <= next_shift_reg;
 		end if;
 	end process seq;
-	
-	-- Output 
-	C <= reg_a;
-	
 end fsmd_binary;
 
