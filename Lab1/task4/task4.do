@@ -28,7 +28,9 @@ vlib work
 vcom -quiet clock.vhd
 vcom -quiet debounce_entity.vhd
 vcom -quiet debounce_sim.vhd
-vcom -quiet gcd_binary.vhd
+vcom -quiet gcd_FSM.vhd
+vcom -quiet gcd_datapath.vhd
+vcom -quiet gcd_module.vhd
 vcom -quiet gcd_entity.vhd
 vcom -quiet gcd_sys.vhd
 vcom -quiet env.vhd
