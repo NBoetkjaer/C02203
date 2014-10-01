@@ -29,6 +29,7 @@ vcom -quiet clock.vhd
 vcom -quiet debounce_entity.vhd
 vcom -quiet debounce_sim.vhd
 vcom -quiet gcd_FSM.vhd
+vcom -quiet comp.vhd
 vcom -quiet gcd_datapath.vhd
 vcom -quiet gcd_module.vhd
 vcom -quiet gcd_entity.vhd
