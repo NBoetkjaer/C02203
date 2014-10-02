@@ -2,7 +2,7 @@
 --
 --  Title      : Finite state machine and datapath of the GCD
 --             :
---  Developers : Anders Greve and Nicolas Bætkjær.
+--  Developers : Anders Greve(s073188) and Nicolas Bøtkjær (s918819) 
 -- 		      :
 --  Purpose    : This design is the FSM and Datapath of the Greatest Common Divisor
 --             :

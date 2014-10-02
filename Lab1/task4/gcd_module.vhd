@@ -1,10 +1,14 @@
 -- -----------------------------------------------------------------------------
 --
---  Title      :  Finite state machine and datapath of the GCD
+--  Title      : Finite state machine and datapath of the GCD
 --             :
---  Developers :  Anders Greve(s073188) and Nicolas Bøtkjær (s918819)         
+--  Developers : Anders Greve(s073188) and Nicolas Bøtkjær (s918819) 
+-- 		      :
+--  Purpose    : This design is the FSM and Datapath of the Greatest Common Divisor
 --             :
---  Purpose    :  This design is the FSM and Datapath of the Greatest Common Divisor 
+--  Notes      : Implementation of Euclids GCD algorithm with repeated subtration.
+--             : The implementation is a low level structural implementation.
+--             : This architecture connects control signals between FSM and datapath.
 --             :
 --  Revision   :  02203 fall 2014 v.1
 --              

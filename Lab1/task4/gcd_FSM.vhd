@@ -1,22 +1,18 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date:    18:57:09 10/01/2014 
--- Design Name: 
--- Module Name:    gcd_FSM - structural 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description: 
+-- -----------------------------------------------------------------------------
 --
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
-----------------------------------------------------------------------------------
+--  Title      : Finite state machine and datapath of the GCD
+--             :
+--  Developers : Anders Greve(s073188) and Nicolas Bøtkjær (s918819) 
+-- 		      :
+--  Purpose    : This design is the FSM and Datapath of the Greatest Common Divisor
+--             :
+--  Notes      : Implementation of Euclids GCD algorithm with repeated subtration.
+--             : The implementation is a low level structural implementation.
+--             : This architecture implements the FMS control logic.
+--             :
+--  Revision   : 02203 fall 2014 v.1
+--              
+-- -----------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
