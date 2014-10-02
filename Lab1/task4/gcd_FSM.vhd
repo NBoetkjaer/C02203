@@ -40,7 +40,7 @@ architecture behaviour of gcd_FSM is
 	----------------------------
 	-- Define FSMD states 
 	----------------------------
-	type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, ALUcompute, CmpAB, UpdateB, DoneC );
+	type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateB, DoneC );
 	----------------------------
 	-- Declare signals
 	----------------------------
@@ -89,9 +89,6 @@ begin
 			When LoadB=>
 				ABorALU <= '1';
 				LDB <= '1';			
-				next_state <= ALUcompute;
-				
-			When ALUcompute=>
 				next_state <= CmpAB;
 				
 			When CmpAB =>
@@ -101,13 +98,13 @@ begin
 					next_state <= UpdateB;
 				else -- Directly update A, result is already on ALU output.
 					LDA <= '1';	
-					next_state <= ALUcompute;
+					next_state <= CmpAB;
 				end if;
 			  
 			When UpdateB =>
 				fn <= "01";
 				LDB <= '1';	
-				next_state <= ALUcompute;
+				next_state <= CmpAB;
 					
 			When DoneC =>
 				C_ready <= '1';
