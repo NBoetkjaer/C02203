@@ -1,23 +1,22 @@
 -- -----------------------------------------------------------------------------
 --
---  Title      :  Finite state machine and datapath of the GCD
+--  Title      : Finite state machine and datapath of the GCD
 --             :
---  Developers :  Jens Sparsø and Rasmus Bo Sørensen          
--- 		       :
---  Purpose    :  This design is the FSM and Datapath of the Greatest Common Divisor 
+--  Developers : Anders Greve and Nicolas Bætkjær.
+-- 		      :
+--  Purpose    : This design is the FSM and Datapath of the Greatest Common Divisor
 --             :
---  Revision   :  02203 fall 2011 v.2
+--  Notes      : Implementation of Euclids GCD algorithm with repeated subtration.
+--             : Operator sharing is implementetd for both subtraction 
+--             : and multiplexing.
+--             :
+--  Revision   :  02203 fall 2014 v.1
 --              
 -- -----------------------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-
----- Uncomment the following library declaration if instantiating
----- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 ENTITY gcd IS            
     PORT (clk:      IN std_logic;				-- The clock signal.
@@ -29,30 +28,34 @@ ENTITY gcd IS
 END gcd;
 
 architecture FSMD_res_sharing of gcd is
-
-type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB
-, UpdateA, UpdateB
-, DoneC ); -- Input your own state names
+-- FSMD States 
+type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateA, UpdateB, DoneC );
 
 signal reg_a,next_reg_a,next_reg_b,reg_b : unsigned(7 downto 0);
 
-signal op1, op2, Y : signed(8 downto 0);
+signal op1, op2, Y : signed(8 downto 0); -- One extra bit to hold the sign-bit.
 signal C_int : unsigned (7 downto 0);
 signal state, next_state : state_type; 
 signal ABorALU, LDA, LDB : std_logic;
 begin
 
 	with ABorALU select 
-		C_int <=	unsigned(Y(7 downto 0)) when '0',
-				AB when others;
-				
+	
+	-- Share the subtraction			
+	Y <= op1 - op2; 
+	
+	-- Share the multiplexer (AB input or result from subtraction) 
+ 	C_int <=	unsigned(Y(7 downto 0)) when '0',
+			AB when others;
+			
+	-- Two multiplexers, one per next_reg_#			
 	next_reg_a <=	C_int when LDA = '1' else reg_a;
 	next_reg_b <=	C_int when LDB = '1' else reg_b;			
-				
-	Y <= op1 - op2;
+	
 	-- Combinatoriel logic
 	CL: process (req, AB, state, reg_a, reg_b, C_int, Y, reset)
 	begin
+		-- Default values.
 		C <= (others =>'Z');
 		ABorALU <= '0';
 		LDA <= '0';
@@ -130,7 +133,6 @@ begin
 	end process CL; 
 
 	-- Registers
-
 	seq: process (clk, reset)
 	begin
 		if reset = '1' then
@@ -141,9 +143,6 @@ begin
 			reg_b <= next_reg_b;
 		end if;
 	end process seq;
-	
-	-- Output 
-	
 	
 end FSMD_res_sharing;
 

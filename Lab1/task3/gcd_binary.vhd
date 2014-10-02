@@ -1,23 +1,23 @@
 -- -----------------------------------------------------------------------------
 --
---  Title      :  Finite state machine and datapath of the GCD
+--  Title      : Finite state machine and datapath of the GCD
 --             :
---  Developers :  Jens Sparsø and Rasmus Bo Sørensen          
--- 		       :
---  Purpose    :  This design is the FSM and Datapath of the Greatest Common Divisor 
+--  Developers : Anders Greve and Nicolas Bætkjær.
+-- 		      :
+--  Purpose    : This design is the FSM and Datapath of the Greatest Common Divisor
 --             :
---  Revision   :  02203 fall 2011 v.2
+--  Notes      : Implementation of the binary GCD algorithm 
+--             : see. http://en.wikipedia.org/wiki/Binary_GCD_algorithm
+--             : for algoritm details. Operator sharing is implemented for
+--             : the subtraction.
+--             :
+--  Revision   :  02203 fall 2014 v.1
 --              
 -- -----------------------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-
----- Uncomment the following library declaration if instantiating
----- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 ENTITY gcd IS            
     PORT (clk:      IN std_logic;				-- The clock signal.
@@ -28,14 +28,15 @@ ENTITY gcd IS
           C:        OUT unsigned(7 downto 0));	-- The result.  
 END gcd;
 
-architecture FSMD_binary of gcd is
 
-type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateA, UpdateB, DoneC ); -- Input your own state names
+architecture FSMD_binary of gcd is
+-- FSMD States 
+type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateA, UpdateB, DoneC );
 signal state, next_state : state_type; 
 
 signal reg_a,next_reg_a, next_reg_b,reg_b: unsigned(7 downto 0);
 signal next_shift_reg, shift_reg : integer range 0 to 7;
-signal op1, op2, diff : signed(8 downto 0);
+signal op1, op2, diff : signed(8 downto 0); -- One extra bit to hold the sign-bit.
 
 begin
 
@@ -95,7 +96,7 @@ begin
 				if diff(8) = '1' then -- If sign bit is set op2 > op1.
 					next_state <= UpdateB;
 				elsif diff(7 downto 0) = 0 then
-					next_reg_a <= reg_a sll shift_reg; -- shift result back.
+					next_reg_a <= reg_a sll shift_reg; -- we're done, shift result back.
 					next_state <= DoneC;
 				else 
 					next_state <= UpdateA;
@@ -118,7 +119,8 @@ begin
 			op1 <= signed('0' & std_logic_vector(reg_b));
 			op2 <= signed('0' & std_logic_vector(reg_a));
 			next_reg_b <= ('0' & unsigned(diff(7 downto 1))); -- divide by 2.
-			next_state <= CmpAB;				
+			next_state <= CmpAB;		
+			
 		When DoneC =>
 			ack <= '1';
 			C <= reg_a;

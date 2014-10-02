@@ -97,7 +97,7 @@ begin
 				elsif N = '1' then -- If sign bit is set then A < B.
 					next_state <= UpdateB;
 				else -- Directly update A, result is already on ALU output.
-					LDA <= '1';	
+					LDA <= '1';
 					next_state <= CmpAB;
 				end if;
 			  

@@ -16,7 +16,7 @@
 
   <files>
     <file xil_pn:name="../gcd_entity.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="2"/>
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="3"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="3"/>
     </file>
     <file xil_pn:name="../gcd_sys.vhd" xil_pn:type="FILE_VHDL">
@@ -58,11 +58,11 @@
       <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="17"/>
       <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="17"/>
     </file>
-    <file xil_pn:name="../gcd_binary.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="3"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="3"/>
+    <file xil_pn:name="../gcd_binary.vhd" xil_pn:type="FILE_VHDL"/>
+    <file xil_pn:name="../gcd_optim.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="2"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="12"/>
     </file>
-    <file xil_pn:name="../gcd_optim.vhd" xil_pn:type="FILE_VHDL"/>
     <file xil_pn:name="../gcd_res_shr.vhd" xil_pn:type="FILE_VHDL"/>
   </files>
 

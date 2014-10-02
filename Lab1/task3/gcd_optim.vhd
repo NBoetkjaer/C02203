@@ -1,23 +1,21 @@
 -- -----------------------------------------------------------------------------
 --
---  Title      :  Finite state machine and datapath of the GCD
+--  Title      : Finite state machine and datapath of the GCD
 --             :
---  Developers :  Jens Sparsø and Rasmus Bo Sørensen          
--- 		       :
---  Purpose    :  This design is the FSM and Datapath of the Greatest Common Divisor 
+--  Developers : Anders Greve and Nicolas Bætkjær.
+-- 		      :
+--  Purpose    : This design is the FSM and Datapath of the Greatest Common Divisor
 --             :
---  Revision   :  02203 fall 2011 v.2
+--  Notes      : Implementation of Euclids GCD algorithm with repeated subtration.
+--             : The implementation is speed optimized, by using a Mealy state (CmpAB)
+--             : and thereby removing states in inner 'loop' of the algorithm.
+--             :
+--  Revision   :  02203 fall 2014 v.1
 --              
 -- -----------------------------------------------------------------------------
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-
----- Uncomment the following library declaration if instantiating
----- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 ENTITY gcd IS            
     PORT (clk:      IN std_logic;				-- The clock signal.
@@ -29,17 +27,13 @@ ENTITY gcd IS
 END gcd;
 
 architecture FSMD_optim of gcd is
-
-type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB
---, UpdateA, UpdateB
-, DoneC ); -- Input your own state names
+-- FSMD States 
+type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, DoneC );
 
 
 signal reg_a,next_reg_a,next_reg_b,reg_b : unsigned(7 downto 0);
 
---signal op1, op2, diff : signed(8 downto 0);
-signal diff_ab, diff_ba : signed(8 downto 0);
-
+signal diff_ab, diff_ba : signed(8 downto 0); -- One extra bit to hold the sign-bit.
 signal state, next_state : state_type; 
 
 begin
@@ -48,12 +42,12 @@ begin
 	diff_ba <= signed(('0' & reg_b)) - signed(('0' & reg_a));
 	
 	-- Combinatoriel logic
-	CL: process (req,AB,state,reg_a,reg_b, diff_ab, diff_ba, reset)
+	CL: process (req, AB, state, reg_a, reg_b, diff_ab, diff_ba, reset)
 	begin
 		next_reg_a <= reg_a;
 		next_reg_b <= reg_b;
 		ack <= '0';	
-				
+		C <= (others =>'Z');		
 		case (state) is
 		
 		When InputA =>
@@ -89,26 +83,17 @@ begin
 		When CmpAB =>
 			if diff_ab(8) = '1' then -- If sign bit is set b > a
 				next_reg_b <= unsigned(diff_ba(7 downto 0));
-				next_state <= CmpAB;
-				--next_state <= UpdateB;				
+				next_state <= CmpAB;		
 			elsif diff_ab(7 downto 0) = 0 then			
 				next_state <= DoneC;
 			else 
 				next_reg_a <= unsigned(diff_ab(7 downto 0));
 				next_state <= CmpAB;
-				--next_state <= UpdateA;
 			end if;
-
---		When UpdateA =>	
---			next_reg_a <= unsigned(diff_ab(7 downto 0));
---			next_state <= CmpAB;
---		  
---		When UpdateB =>
---			next_reg_b <= unsigned(diff_ba(7 downto 0));
---			next_state <= CmpAB;
 				
 		When DoneC =>
 			ack <= '1';
+			C <= reg_a;
 			if req = '0' then
 				next_state <= InputA;
 			else
@@ -130,9 +115,6 @@ begin
 			reg_b <= next_reg_b;
 		end if;
 	end process seq;
-	
-	-- Output 
-	C <= reg_a;
 	
 end FSMD_optim;
 
