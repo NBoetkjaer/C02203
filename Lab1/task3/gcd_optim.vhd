@@ -29,15 +29,12 @@ END gcd;
 architecture FSMD_optim of gcd is
 -- FSMD States 
 type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, DoneC );
-
-
+-- Declare signals
 signal reg_a,next_reg_a,next_reg_b,reg_b : unsigned(7 downto 0);
-
-signal diff_ab, diff_ba : signed(8 downto 0); -- One extra bit to hold the sign-bit.
 signal state, next_state : state_type; 
+signal diff_ab, diff_ba : signed(8 downto 0); -- One extra bit to hold the sign-bit.
 
 begin
-
 	diff_ab <= signed(('0' & reg_a)) - signed(('0' & reg_b));
 	diff_ba <= signed(('0' & reg_b)) - signed(('0' & reg_a));
 	
@@ -104,7 +101,6 @@ begin
 	end process CL; 
 
 	-- Registers
-
 	seq: process (clk, reset)
 	begin
 		if reset = '1' then

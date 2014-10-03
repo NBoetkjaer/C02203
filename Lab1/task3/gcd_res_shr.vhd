@@ -30,27 +30,18 @@ END gcd;
 architecture FSMD_res_sharing of gcd is
 -- FSMD States 
 type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateA, UpdateB, DoneC );
-
+-- Declare signals
+signal state, next_state : state_type; 
 signal reg_a,next_reg_a,next_reg_b,reg_b : unsigned(7 downto 0);
-
 signal op1, op2, Y : signed(8 downto 0); -- One extra bit to hold the sign-bit.
 signal C_int : unsigned (7 downto 0);
-signal state, next_state : state_type; 
-signal ABorALU, LDA, LDB : std_logic;
+signal ABorALU : std_logic;
+ 
 begin
-
-	with ABorALU select 
-	
 	-- Share the subtraction			
 	Y <= op1 - op2; 
-	
 	-- Share the multiplexer (AB input or result from subtraction) 
- 	C_int <=	unsigned(Y(7 downto 0)) when '0',
-			AB when others;
-			
-	-- Two multiplexers, one per next_reg_#			
-	next_reg_a <=	C_int when LDA = '1' else reg_a;
-	next_reg_b <=	C_int when LDB = '1' else reg_b;			
+	C_int <= unsigned(Y(7 downto 0)) when ABorALU = '0' else AB ;	
 	
 	-- Combinatoriel logic
 	CL: process (req, AB, state, reg_a, reg_b, C_int, Y, reset)
@@ -58,8 +49,8 @@ begin
 		-- Default values.
 		C <= (others =>'Z');
 		ABorALU <= '0';
-		LDA <= '0';
-		LDB <= '0';
+		next_reg_a <= reg_a;
+		next_reg_b <= reg_b;		
 		ack <= '0';
 		op1 <= signed('0' & std_logic_vector(reg_a));
 		op2 <= signed('0' & std_logic_vector(reg_b));		
@@ -75,7 +66,7 @@ begin
 		  
 		When LoadA =>  
 			next_state <= RegAdone;
-			LDA <= '1';
+			next_reg_a <=	C_int;
 			ABorALU <= '1';
 			
 		When RegAdone =>
@@ -94,9 +85,9 @@ begin
 			end if;     
 		  
 		When LoadB=>
-			LDB <= '1';
+			next_state <= CmpAB;		
+			next_reg_b <= C_int;
 			ABorALU <= '1';
-			next_state <= CmpAB;
 		  
 		When CmpAB =>
 			if Y(8) = '1' then -- If sign bit is set op2 > op1		
@@ -110,13 +101,13 @@ begin
 		When UpdateA =>
 			op1 <= signed('0' & std_logic_vector(reg_a));
 			op2 <= signed('0' & std_logic_vector(reg_b));	
-			LDA <= '1';			
+			next_reg_a <=	C_int;	
 			next_state <= CmpAB;
 		  
 		When UpdateB =>
 			op1 <= signed('0' & std_logic_vector(reg_b));
 			op2 <= signed('0' & std_logic_vector(reg_a));
-			LDB <= '1';
+			next_reg_b <= C_int;
 			next_state <= CmpAB;
 				
 		When DoneC =>
@@ -127,8 +118,7 @@ begin
 			else
 				next_state <= DoneC;
 			end if;  
-			
-			
+				
 	   end case;      
 	end process CL; 
 

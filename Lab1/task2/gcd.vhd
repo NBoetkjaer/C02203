@@ -1,23 +1,21 @@
 -- -----------------------------------------------------------------------------
 --
---  Title      :  Finite state machine and datapath of the GCD
+--  Title      : Finite state machine and datapath of the GCD
 --             :
---  Developers :  Jens Sparsø and Rasmus Bo Sørensen          
--- 		       :
---  Purpose    :  This design is the FSM and Datapath of the Greatest Common Divisor 
+--  Developers : Anders Greve(s073188) and Nicolas Bøtkjær (s918819) 
+-- 		      :
+--  Purpose    : This design is the FSM and Datapath of the Greatest Common Divisor
 --             :
---  Revision   :  02203 fall 2011 v.2
+--  Notes      : Implementation of Euclids GCD algorithm with repeated subtration.
+--             : Basic implemention without any optimization.
+--             :
+--  Revision   :  02203 fall 2014 v.1
 --              
 -- -----------------------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-
----- Uncomment the following library declaration if instantiating
----- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 ENTITY gcd IS            
     PORT (clk:      IN std_logic;				-- The clock signal.
@@ -29,13 +27,13 @@ ENTITY gcd IS
 END gcd;
 
 architecture FSMD of gcd is
-
-type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateA, UpdateB, DoneC ); -- Input your own state names
+-- FSMD States 
+type state_type is ( InputA, LoadA, RegAdone, InputB, LoadB, CmpAB, UpdateA, UpdateB, DoneC );
+-- Declare signals
 signal reg_a,next_reg_a,next_reg_b,reg_b : unsigned(7 downto 0);
 signal state, next_state : state_type; 
 
 begin
-
 	-- Combinatoriel logic
 	CL: process (req,AB,state,reg_a,reg_b,reset)
 	begin
@@ -110,7 +108,8 @@ begin
 		if reset = '1' then
 			state <= InputA;         -- Reset to initial state 
 		elsif rising_edge(clk) then
-			state <= next_state;
+			-- Update all registers
+			state <= next_state;	
 			reg_a <= next_reg_a;
 			reg_b <= next_reg_b;
 		end if;
