@@ -20,9 +20,18 @@ add wave -label clk /testbench/clk
 add wave -label reset /testbench/reset
 add wave -label AB -radix unsigned /testbench/AB
 add wave -label req /testbench/req
-add wave -label C -radix unsigned /testbench/C
 add wave -label ack /testbench/ack
-
+add wave -label C -radix unsigned /testbench/C
+add wave -label state /testbench/GCD_module/u1/fsm_comp/state
+add wave -label fn -radix unsigned /testbench/GCD_module/u1/datapath_comp/fn 
+add wave -label ABorALU /testbench/GCD_module/u1/datapath_comp/ABorALU 
+add wave -label LDA /testbench/GCD_module/u1/datapath_comp/LDA
+add wave -label LDB /testbench/GCD_module/u1/datapath_comp/LDB
+add wave -label reg_a /testbench/GCD_module/u1/datapath_comp/reg_a/data_out
+add wave -label reg_b /testbench/GCD_module/u1/datapath_comp/reg_b/data_out
+add wave -label Z /testbench/GCD_module/u1/datapath_comp/Z
+add wave -label N /testbench/GCD_module/u1/datapath_comp/N
+add wave -label C_ready /testbench/GCD_module/u1/datapath_comp/C_ready
 run 1100ns
 
 # WaveRestoreZoom changes the wave view to show the simulated time
