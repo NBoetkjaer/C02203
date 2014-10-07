@@ -15,12 +15,14 @@
 # To change the name of the waves in the wave view use the -label option
 # Example:
 # add wave -label clk /testbench/clk
-add wave /testbench/clk
-add wave /testbench/reset
-add wave /testbench/AB
-add wave /testbench/req
-add wave /testbench/C
-add wave /testbench/ack
+
+add wave -label clk /testbench/clk
+add wave -label reset /testbench/reset
+add wave -label AB -radix unsigned /testbench/AB
+add wave -label req /testbench/req
+add wave -label C -radix unsigned /testbench/C
+add wave -label ack /testbench/ack
+add wave -label state /testbench/GCD_module/u1/state 
 
 run 1100ns
 
