@@ -62,7 +62,12 @@ work
 !*.svg
 !*.pdf
 !*.gv
+!*.pgm
+!*.bits
 
+# matlab files
+!*.m
+ 
 # Xilinx project file
 !*.xise
 !*.bit
