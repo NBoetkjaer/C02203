@@ -54,7 +54,6 @@ ARCHITECTURE structure OF acc IS
 	-- Two signals to hold states.
 	SIGNAL state, state_next: StateType;
 	signal addr_reg, addr_next, addr_write: word_t;	
---	signal pixVal_reg, pixVal_next: halfword_t;
 	signal rw_int: std_logic;
 	constant img_width	: natural := 352;
    constant img_height	: natural := 288;
@@ -73,8 +72,7 @@ BEGIN
 		rw_int <= '1';
 		req <= '0';
 		addr_next <= addr_reg;
-		dataW <= (others => '0'); --not pixVal_reg;
-		--pixVal_next <= pixVal_reg; 
+		dataW <= (others => '0');
 		
 		case state is			
 			when idle =>			
@@ -119,7 +117,6 @@ BEGIN
 		elsif rising_edge(clk) then
 			state <= state_next;
 			addr_reg <= addr_next;
-			--pixVal_reg <= pixVal_next;
 		end if;
 	end process registerTransfer;
 
