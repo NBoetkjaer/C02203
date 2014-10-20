@@ -49,12 +49,12 @@ END acc;
 ARCHITECTURE structure OF acc IS
 
 	-- All internal signals are defined here
-	TYPE StateType IS (idle, prepareRead, readPix, prepareWrite, writePix, doneImg);  
+	TYPE StateType IS (idle, readData, writeData, doneImg);  
 
 	-- Two signals to hold states.
 	SIGNAL state, state_next: StateType;
 	signal addr_reg, addr_next, addr_write: word_t;	
-	signal pixVal_reg, pixVal_next: halfword_t;
+--	signal pixVal_reg, pixVal_next: halfword_t;
 	signal rw_int: std_logic;
 	constant img_width	: natural := 352;
    constant img_height	: natural := 288;
@@ -73,40 +73,35 @@ BEGIN
 		rw_int <= '1';
 		req <= '0';
 		addr_next <= addr_reg;
-		dataW <= not pixVal_reg;
-		pixVal_next <= pixVal_reg; 
+		dataW <= (others => '0'); --not pixVal_reg;
+		--pixVal_next <= pixVal_reg; 
 		
 		case state is			
-			when idle =>
-			
+			when idle =>			
 				addr_next <= (others => '0');
 				if start = '1' then
-					state_next <= prepareRead;
+					state_next <= readData;
 				end if;
 				
-			when prepareRead =>
-				state_next <= readPix;
+			when readData =>
+				state_next <= writeData;
 				rw_int <= '1'; -- Read mode.
-				req <= '1'; -- Request memory transaction.
+				req <= '1'; -- Request memory transaction.		
 				
-			when readPix =>
-				pixVal_next <= dataR;
-				state_next <= prepareWrite;
-				
-			when prepareWrite =>
-				state_next <= writePix;
+			when writeData =>
+				dataW <= not dataR; -- Write inverted pixel values.
 				rw_int <= '0'; -- write mode.
-				req <= '1'; -- Request memory transaction.	
-				
-			when writePix =>			
+				req <= '1'; -- Request memory transaction.
+
+				-- Check if image is done ...
 				if unsigned(addr_reg) = last_addr then
 					state_next <= doneImg;
 				else
-					state_next <= prepareRead;
+					state_next <= readData;
 				end if;
 				-- Move to next memory location.					
-				addr_next <= std_logic_vector(unsigned(addr_reg) + 1); 					
-				
+				addr_next <= std_logic_vector(unsigned(addr_reg) + 1);				
+											
 			when doneImg =>
 				finish <= '1';
 				if start = '0' then
@@ -124,7 +119,7 @@ BEGIN
 		elsif rising_edge(clk) then
 			state <= state_next;
 			addr_reg <= addr_next;
-			pixVal_reg <= pixVal_next;
+			--pixVal_reg <= pixVal_next;
 		end if;
 	end process registerTransfer;
 
