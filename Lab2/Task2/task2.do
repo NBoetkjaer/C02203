@@ -31,6 +31,7 @@ vcom -quiet memory2.vhd
 vcom -quiet acc2.vhd
 vcom -quiet test2.vhd
 
+
 # The -quiet option disables output from the vcom command
 # that is not error or warning messages.
 
@@ -39,6 +40,13 @@ vcom -quiet test2.vhd
 # the simulation
 
 vsim testbench
+
+add wave -label reset /testbench/reset
+add wave -label clk /testbench/clk
+add wave -label start /testbench/start
+add wave -label addr -radix unsigned /testbench/addr
+add wave -label state /testbench/Accelerator/state
+
 
 run 2000 ms
 
