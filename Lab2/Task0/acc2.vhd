@@ -49,11 +49,12 @@ END acc;
 ARCHITECTURE structure OF acc IS
 
 	-- All internal signals are defined here
-	TYPE StateType IS (idle, readData, writeData, doneImg);  
+	TYPE StateType IS (idle, readSetup, readData , writeData, doneImg);  
 
 	-- Two signals to hold states.
 	SIGNAL state, state_next: StateType;
-	signal addr_reg, addr_next, addr_write: word_t;	
+	signal addr_reg, addr_next, addr_write: word_t;
+	signal pixPair_reg, pixPair_next: halfword_t;
 	signal rw_int: std_logic;
 	constant img_width	: natural := 352;
    constant img_height	: natural := 288;
@@ -64,7 +65,7 @@ BEGIN
 	rw <= rw_int;
 	addr <= addr_reg when rw_int = '1' else  std_logic_vector(unsigned(addr_reg) + mem_start);
 
-	FSMD: process(state,start)	
+	FSMD: process(state,start, dataR, pixPair_reg, addr_reg)	
 	begin
 		-- Default values
 		finish <= '0';
@@ -78,16 +79,22 @@ BEGIN
 			when idle =>			
 				addr_next <= (others => '0');
 				if start = '1' then
-					state_next <= readData;
+					state_next <= readSetup;
 				end if;
 				
-			when readData =>
-				state_next <= writeData;
+			when readSetup =>
+				state_next <= readData;
 				rw_int <= '1'; -- Read mode.
 				req <= '1'; -- Request memory transaction.		
-				
+
+			when readData =>
+				state_next <= writeData;
+				pixPair_next <= dataR; -- transfer to pixPair register.
+				rw_int <= '1'; -- Read mode.
+				req <= '1'; -- Request memory transaction.		
+								
 			when writeData =>
-				dataW <= not dataR; -- Write inverted pixel values.
+				dataW <= not pixPair_reg; -- Write inverted pixel values.
 				rw_int <= '0'; -- write mode.
 				req <= '1'; -- Request memory transaction.
 
@@ -95,7 +102,7 @@ BEGIN
 				if unsigned(addr_reg) = last_addr then
 					state_next <= doneImg;
 				else
-					state_next <= readData;
+					state_next <= readSetup;
 				end if;
 				-- Move to next memory location.					
 				addr_next <= std_logic_vector(unsigned(addr_reg) + 1);				
@@ -117,6 +124,7 @@ BEGIN
 		elsif rising_edge(clk) then
 			state <= state_next;
 			addr_reg <= addr_next;
+			pixPair_reg <= pixPair_next;
 		end if;
 	end process registerTransfer;
 

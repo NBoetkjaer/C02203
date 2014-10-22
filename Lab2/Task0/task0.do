@@ -40,6 +40,12 @@ vcom -quiet test2.vhd
 
 vsim testbench
 
+add wave -label reset /testbench/reset
+add wave -label clk /testbench/clk
+add wave -label start /testbench/start
+add wave -label addr -radix unsigned /testbench/addr
+add wave -label state /testbench/Accelerator/state
+
 run 2000 ms
 
 ################################################################
