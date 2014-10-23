@@ -47,7 +47,12 @@ add wave -label start /testbench/start
 add wave -label addr -radix unsigned /testbench/addr
 add wave -label state /testbench/Accelerator/state
 
+add wave -label firstRow /testbench/Accelerator/firstRow
+add wave -label lastRow /testbench/Accelerator/lastRow
+add wave -label firstColumn /testbench/Accelerator/firstColumn
+add wave -label lastColumn /testbench/Accelerator/lastColumn
 
-run 2000 ms
+
+run 2000 ns
 
 ################################################################

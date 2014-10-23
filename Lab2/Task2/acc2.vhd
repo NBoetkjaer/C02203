@@ -57,12 +57,28 @@ ARCHITECTURE structure OF acc IS
 	constant mem_start  : natural := img_width/2*img_height;
 
 	-- All internal signals are defined here
-	type StateType is (idle, readSetup, readData1, readData2, readData3,  writeData, doneImg);  
+	type StateType is (idle, startRow, readSetup, readCenter, readAbove, readBelow,  writeData, doneImg);  
 
 	-- Declare a type that can hold the cached pixel data.
 	type RowCache_t is array (5 downto 0) of halfword_t;
+
+	-- Declare signals
+	signal state, state_next : StateType; -- Two signals to hold the states of the FSM.
+	signal addr_reg, addr_next : word_t;			-- Address being processed. 
+	signal addr_row_reg, addr_row_next: word_t;		-- Address to start of current row (scan line).
+	signal addr_read_reg, addr_read_next: word_t;	-- Current read address.
+	signal rw_int : std_logic;	-- internal signal (wired to rw)
+	
+	-- Accumulator register used to pipeline the gradient calculations
+	-- maximum range is [-4*255; 4*255] = [-1020,1020]
+	signal Gx_reg, Gx_next, Gy_reg, Gy_next: signed(10 downto 0); 
+	-- Signals used for border handling.
+	signal firstRow, lastRow		: std_logic;	-- Signals to indicate the first and last scanLine.
+	signal firstColumn, lastColumn	: std_logic;	-- Signals to indicate the first and last column.
+	-- Pixel cache holds 12 x 8 bit pixels (organized in 6 pixel pairs of each 16 bit )
 	signal pixelCache_reg,  pixelCache_next: RowCache_t;	
-	-- Declare convenient aliases for kernel pixels 	
+	-- Declare convenient aliases for pixels.
+	-- A1-9 and B1-9 represents a 3x3 neighborhood.
 	---------------------------
 	--    0       |       1    |
 	-- A1 | A2/B1 | A3/B2 | B3 |
@@ -93,107 +109,131 @@ ARCHITECTURE structure OF acc IS
 	alias B8 : byte_t is pixelCache_reg(5)(7 downto 0);
 	alias B9 : byte_t is pixelCache_reg(5)(15 downto 8);
 
-	-- Declare signals
-	signal state, state_next : StateType; -- Two signals to hold the states of the FSM.
-	signal addr_reg, addr_next : word_t; -- Address being processed. 
-	signal addr_read_reg, addr_read_next: word_t;	-- Current read address.
-	signal rw_int : std_logic;	-- internal signal (wired to rw)
-	
-	signal firstLine, lastLine	: std_logic;
-	signal firstRow, lastRow	: std_logic;
-
 begin
-	rw <= rw_int;
+	rw <= rw_int; -- Wire internal signal to entity out port .
+	-- Assign address to either read or write address.
 	addr <= addr_read_reg when rw_int = '1' else  std_logic_vector(unsigned(addr_reg) + mem_start);
-
-	firstLine <= '1' when unsigned(addr_reg) < width_step else '0';
-	lastLine <= '1' when unsigned(addr_reg) > (last_addr - width_step);
+	-- Generate signals to indicate the image borders.
+	firstRow <= '1' when unsigned(addr_reg) < width_step else '0';
+	lastRow <= '1' when unsigned(addr_reg) > (last_addr - width_step) else '0';
+	firstColumn <= '1' when addr_reg = addr_row_reg else '0';
+	LastColumn <= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + (width_step - 1)) else '0';
 	
-	FSMD: process(state, start, firstLine, lastLine, firstRow, lastRow, dataR, addr_reg, pixelCache_reg)
+	FSMD: process(state, start, firstRow, lastRow, firstColumn, lastColumn, dataR, addr_reg, addr_row_reg, pixelCache_reg)
 	begin
 		-- Default values
 		state_next <= state;
 		finish <= '0';
-		rw_int <= '1';
-		req <= '0';
+		rw_int <= '1';	-- read mode
+		req <= '1'; -- request memory interface.
 		dataW <= (others => '0');		
 
 		pixelCache_next <= pixelCache_reg;
 		addr_next <= addr_reg;
 		addr_read_next <= addr_read_reg;		
+		addr_row_next <= addr_row_reg;
+		Gx_next <= Gx_reg;
+		Gy_next <= Gy_reg;
 		
 		case state is			
-			when idle =>			
+			when idle =>		
+				req <= '0'; -- release memory request
 				addr_next <= (others => '0');
 				addr_read_next <= (others => '0');
 				if start = '1' then
-					state_next <= readData1;
+					state_next <= startRow;
 				end if;
+			when startRow =>				
+				state_next <= readSetup;
+				addr_row_next <= addr_reg;	-- Save start address of current row to register.
 				
 			when readSetup =>
-				state_next <= readData1;			
+				state_next <= readCenter;			
 				rw_int <= '1'; -- Read mode.
-				req <= '1'; -- Request memory transaction.	
-				addr_read_next <= addr_reg;		
+				-- prepare to read center position.
+				addr_read_next <= addr_reg;	
+				-- Reset the accumulators.
+				Gx_next <= (others => '0');
+				Gy_next <= (others => '0');
 				
-			when readData1 =>
-				state_next <= readData2;
+			when readCenter =>
+				state_next <= readAbove;
 				rw_int <= '1'; -- Read mode.
-				req <= '1'; -- Request memory transaction.	
-			
-				pixelCache_next(0) <=  pixelCache_reg(1);
-				pixelCache_next(1) <= dataR;
-				if firstLine = '0' then						
-					addr_read_next <= std_logic_vector(unsigned(addr_reg) - width_step);
-				end if;					
-				
-			when readData2 =>
-				state_next <= readData3;
-				rw_int <= '1'; -- Read mode.
-				req <= '1'; -- Request memory transaction.	
-
 				pixelCache_next(2) <=  pixelCache_reg(3);
 				pixelCache_next(3) <= dataR;
-				if lastLine = '0' then 
+				
+				if firstRow = '0' then				
+					-- prepare to read one row above the center position.
+					addr_read_next <= std_logic_vector(unsigned(addr_reg) - width_step);
+				else
+					-- Handle top border, by reading center position again.
+					addr_read_next <= addr_reg;
+				end if;					
+				
+			when readAbove =>
+				state_next <= readBelow;
+				rw_int <= '1'; -- Read mode.
+
+				pixelCache_next(0) <=  pixelCache_reg(1);
+				pixelCache_next(1) <= dataR;
+				-- 2*a6 - 2*a4
+				Gx_next <= signed('0' & std_logic_vector(signed('0' & A6) - signed('0' & A4)) & '0');
+				
+				if lastRow = '0' then 
+					-- prepare to read one row below the center position.
 					addr_read_next <= std_logic_vector(unsigned(addr_reg) + width_step);
 				else
+					-- Handle top border, by reading center position again.
 					addr_read_next <= addr_reg;
 				end if;									
 				
-			when readData3 =>
+			when readBelow =>
 				state_next <= writeData;
-				rw_int <= '1'; -- Read mode.
-				req <= '1'; -- Request memory transaction.	
+				rw_int <= '1'; -- Read mode.	
 
 				pixelCache_next(4) <=  pixelCache_reg(5);
 				pixelCache_next(5) <= dataR;
-				
-				if firstRow then
+				-- a1 + 2*a2 + a3
+				--Gy_next <= signed( std_logic_vector(( "00" & A1) + ('0' & A2 & '0') + ( "00" & A3) ));
+				-- a3 - a1
+				Gx_next <= Gx_reg + signed('0' & std_logic_vector(signed('0' & A3) - signed('0' & A1)));
+				if firstColumn = '1'then
+					pixelCache_next(4) <= dataR(15 downto 8) & dataR(15 downto 8);
+					pixelCache_next(2) <= pixelCache_reg(3)(15 downto 8) & pixelCache_reg(3)(15 downto 8);
+					pixelCache_next(0) <= pixelCache_reg(1)(15 downto 8) & pixelCache_reg(1)(15 downto 8);
+				end if;
+				if lastColumn = '1'then
 					pixelCache_next(5) <= dataR(15 downto 8) & dataR(15 downto 8);
 					pixelCache_next(3) <= pixelCache_reg(3)(15 downto 8) & pixelCache_reg(3)(15 downto 8);
-					pixelCache_next(1) <= pixelCache_reg(1)(15 downto 8) & pixelCache_reg(1)(15 downto 8);					
+					pixelCache_next(1) <= pixelCache_reg(0)(15 downto 8) & pixelCache_reg(1)(15 downto 8);
 				end if;
 			
-			when writeData =>				
-				--dataW <=  pixelCache_reg(2)(7 downto 0) & pixelCache_reg(2)( 15 downto 8); -- Just a test swap pixels ... 0<->1, 2<->3, ...				
-				--dataW <= B9 & B8;  
-				dataW <= A9 & A8;  
+			when writeData =>
+				-- a7 + 2*a8 + a9
+				--Gy_next <= Gy_reg - ...
+				-- a9 - a7
+				Gx_next <= Gx_reg + signed('0' & std_logic_vector(signed('0' & A9) - signed('0' & A7)));
+			
+				dataW <= max(abs(A9 & A8;  
 				rw_int <= '0'; -- write mode.
-				req <= '1'; -- Request memory transaction.
-
-				-- ToDo handle end of line ...
 				
 				-- Check if image is done
-				if unsigned(addr_reg) = last_addr then
+				if lastRow = '1' and lastColumn = '1' then  
 					state_next <= doneImg;
 				else
-					state_next <= readData1;
+					-- Check for end of row
+					if lastColumn = '1' then
+						state_next <= startRow;
+					else
+						state_next <= readSetup;
+					end if;
 				end if;
 				-- Move to next memory location.					
 				addr_next <= std_logic_vector(unsigned(addr_reg) + 1);				
 											
 			when doneImg =>
 				finish <= '1';
+				req <= '0';	-- release memory request
 				if start = '0' then
 					state_next <= idle;
 				end if;
@@ -210,8 +250,10 @@ begin
 			state <= state_next;
 			addr_reg <= addr_next;
 			addr_read_reg <= addr_read_next;
-			
-			pixelCache_reg <= pixelCache_next;		
+			addr_row_reg <= addr_row_next;
+			pixelCache_reg <= pixelCache_next;	
+			Gx_reg <= Gx_next;
+			Gy_reg <= Gy_next;
 		end if;
 	end process registerTransfer;
 
