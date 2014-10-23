@@ -214,7 +214,7 @@ begin
 				-- a9 - a7
 				Gx_next <= Gx_reg + signed('0' & std_logic_vector(signed('0' & A9) - signed('0' & A7)));
 			
-				dataW <= max(abs(A9 & A8;  
+				dataW <= A9 & A8;  
 				rw_int <= '0'; -- write mode.
 				
 				-- Check if image is done
