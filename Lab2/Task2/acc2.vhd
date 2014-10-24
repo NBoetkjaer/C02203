@@ -79,14 +79,14 @@ ARCHITECTURE structure OF acc IS
 	signal pixelCache_reg,  pixelCache_next: RowCache_t;	
 	-- Declare convenient aliases for pixels.
 	-- A1-9 and B1-9 represents a 3x3 neighborhood.
-	---------------------------
-	--    0       |       1    |
-	-- A1 | A2/B1 | A3/B2 | B3 |
-	----------------------------
-	--    2       |       3    |
-	-- A4 | A5/B4 | A6/B5 | B6 |
---------------------------------	
-	--    4       |       5    |
+	----------------------------      A:
+	--    0       |       1    |      A1 A2 A3
+	-- A1 | A2/B1 | A3/B2 | B3 |      A4 A5 A6
+	----------------------------      A7 A8 A9
+	--    2       |       3    |      B: 
+	-- A4 | A5/B4 | A6/B5 | B6 |      B1 B2 B3
+--------------------------------	  B4 B5 B6
+	--    4       |       5    |      B7 B8 B9
 	-- A7 | A8/B7 | A9/B8 | B9 |
 	----------------------------
 	alias A1 : byte_t is pixelCache_reg(0)(7 downto 0);
@@ -110,6 +110,22 @@ ARCHITECTURE structure OF acc IS
 	alias B9 : byte_t is pixelCache_reg(5)(15 downto 8);
 
 begin
+	-----------------------------
+	-- Overview of algorithm flow.
+	-- Show how the pixels are access pairwise.
+	--   0 1 2 3	: Memory address.
+	--  xABCDEFGHx	: Image (width must be even) A-H is pixels x is the border.
+	--  AABCD		: step (1)	: read addr. 0 and 1 (first column).
+	--   AB			: 			: write addr. 0 + offset.
+	--    BCDEF  	: step (2)	: read addr. 2.
+	--     CD		: 			: write addr. 1 + offset
+	-- 				: ....
+	--  	DEFGH	: step (n-1): read addr. (n-1).
+	--  	 EF		: 			: write addr. (n-1) - 1 + offset
+	--  	   GHH#	: step (n)	: no read (last column) (# = don't care)
+	--  	   GH	: 			: write addr. n - 1 + offset
+	-----------------------------
+
 	rw <= rw_int; -- Wire internal signal to entity out port .
 	-- Assign address to either read or write address.
 	addr <= addr_read_reg when rw_int = '1' else  std_logic_vector(unsigned(addr_reg) + mem_start);
@@ -168,7 +184,7 @@ begin
 				else
 					-- Handle top border, by reading center position again.
 					addr_read_next <= addr_reg;
-				end if;					
+				end if;
 				
 			when readAbove =>
 				state_next <= readBelow;
@@ -197,15 +213,19 @@ begin
 				--Gy_next <= signed( std_logic_vector(( "00" & A1) + ('0' & A2 & '0') + ( "00" & A3) ));
 				-- a3 - a1
 				Gx_next <= Gx_reg + signed('0' & std_logic_vector(signed('0' & A3) - signed('0' & A1)));
+				
 				if firstColumn = '1'then
-					pixelCache_next(4) <= dataR(15 downto 8) & dataR(15 downto 8);
-					pixelCache_next(2) <= pixelCache_reg(3)(15 downto 8) & pixelCache_reg(3)(15 downto 8);
-					pixelCache_next(0) <= pixelCache_reg(1)(15 downto 8) & pixelCache_reg(1)(15 downto 8);
+					-- Handle left border.
+					pixelCache_next(0) <= A3 & A3;
+					pixelCache_next(2) <= A6 & A6; --pixelCache_reg(3)(7 downto 0) & pixelCache_reg(3)(15 downto 8);
+					pixelCache_next(4) <= dataR(7 downto 0) & dataR(7 downto 0);
 				end if;
 				if lastColumn = '1'then
+					-- ToDo not working yet ....
+					-- Handle right border. -- 
+					pixelCache_next(1) <= B2 & B2; --pixelCache_reg(0)(15 downto 8) & pixelCache_reg(1)(15 downto 8);
+					pixelCache_next(3) <= B6 & B6; --pixelCache_reg(3)(15 downto 8) & pixelCache_reg(3)(15 downto 8);
 					pixelCache_next(5) <= dataR(15 downto 8) & dataR(15 downto 8);
-					pixelCache_next(3) <= pixelCache_reg(3)(15 downto 8) & pixelCache_reg(3)(15 downto 8);
-					pixelCache_next(1) <= pixelCache_reg(0)(15 downto 8) & pixelCache_reg(1)(15 downto 8);
 				end if;
 			
 			when writeData =>
@@ -215,6 +235,7 @@ begin
 				Gx_next <= Gx_reg + signed('0' & std_logic_vector(signed('0' & A9) - signed('0' & A7)));
 			
 				dataW <= A9 & A8;  
+				dataW <= abs(Gx_reg) + (Gy_reg);
 				rw_int <= '0'; -- write mode.
 				
 				-- Check if image is done
