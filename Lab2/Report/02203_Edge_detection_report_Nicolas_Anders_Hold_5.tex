@@ -1,0 +1,52 @@
+\documentclass[12pt,a4paper,final]{report}
+
+% The preamble.tex file holdes all included libs and is a good way to get a better over view of the document since the list of libaries to include grows fast.
+\input{preample}  
+
+\begin{document}
+\setlength{\headheight}{41.62pt}
+
+
+%\topmargin = 20pt
+%\headheight = 8pt
+%\headsep = 25pt
+
+\include{Frontpage}
+\renewcommand{\headrulewidth}{2pt}
+%Front matter page formatition
+\pagestyle{fancyplain}
+\fancyhf{}
+\lhead{\fancyplain{}{}}
+\rhead{\fancyplain{}{}}
+\rfoot{\fancyplain{}{}}
+\pagenumbering{roman}
+          
+\include{Abstract}
+
+\newpage
+%main matter page formatition
+\pagenumbering{arabic}
+\pagestyle{fancyplain}
+\fancyhf{}
+\renewcommand{\headrulewidth}{2pt} 
+\lhead{\fancyplain{02203 Design of Digital Systems - Edge detection Report d.\\
+s918819 Nicolas Bøtkjær\\
+s073188 Anders Greve
+}{02203 Design of Digital Systems - Edge detection d.\\
+s918819 Nicolas Bøtkjær\\
+s073188 Anders Greve}}
+\rhead{\fancyplain{}{}}
+\cfoot{\fancyplain{Page \thepage\ of \pageref{LastPage}}{Page \thepage\ of \pageref{LastPage}}} %Page numbering
+
+\tableofcontents
+\input{Introduction}
+\input{Theory}
+\input{Results}
+\input{Conclusion}
+\input{biblio/bib}
+%\newpage\begin{flushright}\begin{flushright}
+\input{Appendix}
+
+
+\end{document}
+
