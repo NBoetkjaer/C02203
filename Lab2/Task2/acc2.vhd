@@ -69,12 +69,15 @@ ARCHITECTURE structure OF acc IS
 	signal addr_read_reg, addr_read_next: word_t;	-- Current read address.
 	signal rw_int : std_logic;	-- internal signal (wired to rw)
 	
+	-- ToDo ...
 	-- Accumulator register used to pipeline the gradient calculations
 	-- maximum range is [-4*255; 4*255] = [-1020,1020]
-	signal Gx_reg, Gx_next, Gy_reg, Gy_next: signed(10 downto 0); 
+	-- signal Gx_reg, Gx_next, Gy_reg, Gy_next: signed(10 downto 0); 
+	
 	-- Signals used for border handling.
 	signal firstRow, lastRow		: std_logic;	-- Signals to indicate the first and last scanLine.
 	signal firstColumn, lastColumn	: std_logic;	-- Signals to indicate the first and last column.
+	signal firstColumn1, lastColumn1: std_logic;	-- Signals to indicate the the write addr. in on first and last column.
 	-- Pixel cache holds 12 x 8 bit pixels (organized in 6 pixel pairs of each 16 bit )
 	signal pixelCache_reg,  pixelCache_next: RowCache_t;	
 	-- Declare convenient aliases for pixels.
@@ -122,20 +125,27 @@ begin
 	-- 				: ....
 	--  	DEFGH	: step (n-1): read addr. (n-1).
 	--  	 EF		: 			: write addr. (n-1) - 1 + offset
-	--  	   GHH#	: step (n)	: no read (last column) (# = don't care)
+	--  	  FGHH#	: step (n)	: no read (last column) (# = don't care)
 	--  	   GH	: 			: write addr. n - 1 + offset
 	-----------------------------
 
 	rw <= rw_int; -- Wire internal signal to entity out port .
-	-- Assign address to either read or write address.
-	addr <= addr_read_reg when rw_int = '1' else  std_logic_vector(unsigned(addr_reg) + mem_start);
+	-- Assign address to either read or write address. Note that write address is lagging one behind.
+	addr <= addr_read_reg when rw_int = '1' else  std_logic_vector(unsigned(addr_reg) + mem_start -  1);
 	-- Generate signals to indicate the image borders.
-	firstRow <= '1' when unsigned(addr_reg) < width_step else '0';
-	lastRow <= '1' when unsigned(addr_reg) > (last_addr - width_step) else '0';
-	firstColumn <= '1' when addr_reg = addr_row_reg else '0';
-	LastColumn <= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + (width_step - 1)) else '0';
+	firstRow		<= '1' when unsigned(addr_reg) < width_step else '0';
+	lastRow 		<= '1' when unsigned(addr_reg) > (last_addr - width_step) else '0';
+	firstColumn 	<= '1' when addr_reg = addr_row_reg else '0';
+	firstColumn1	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + 1) else '0';
+	LastColumn1 	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + (width_step)) else '0';
 	
-	FSMD: process(state, start, firstRow, lastRow, firstColumn, lastColumn, dataR, addr_reg, addr_row_reg, pixelCache_reg)
+	FSMD: process(state, start, firstRow, lastRow, firstColumn, lastcolumn1, dataR, addr_reg, addr_read_reg, addr_row_reg, pixelCache_reg)
+		variable tmp_Gx_A : signed(10 downto 0);
+		variable tmp_Gy_A : signed(10 downto 0);
+		variable tmp_Gx_B : signed(10 downto 0);
+		variable tmp_Gy_B : signed(10 downto 0);
+		variable resultA: signed(10 downto 0);
+		variable resultB: signed(10 downto 0);
 	begin
 		-- Default values
 		state_next <= state;
@@ -148,33 +158,36 @@ begin
 		addr_next <= addr_reg;
 		addr_read_next <= addr_read_reg;		
 		addr_row_next <= addr_row_reg;
-		Gx_next <= Gx_reg;
-		Gy_next <= Gy_reg;
 		
 		case state is			
 			when idle =>		
 				req <= '0'; -- release memory request
-				addr_next <= (others => '0');
-				addr_read_next <= (others => '0');
+				addr_row_next <= (others => '0');
 				if start = '1' then
 					state_next <= startRow;
 				end if;
+				
 			when startRow =>				
+				req <= '0'; -- release memory request
 				state_next <= readSetup;
-				addr_row_next <= addr_reg;	-- Save start address of current row to register.
+				addr_next <= addr_row_reg; -- Set addr to start of row.				
 				
 			when readSetup =>
-				state_next <= readCenter;			
+				if  LastColumn1 = '1' then 
+					-- When processing last column we should not read any data.
+					state_next <= writeData; 
+				else
+					state_next <= readCenter;
+				end if;
+				
 				rw_int <= '1'; -- Read mode.
 				-- prepare to read center position.
 				addr_read_next <= addr_reg;	
-				-- Reset the accumulators.
-				Gx_next <= (others => '0');
-				Gy_next <= (others => '0');
 				
 			when readCenter =>
 				state_next <= readAbove;
 				rw_int <= '1'; -- Read mode.
+
 				pixelCache_next(2) <=  pixelCache_reg(3);
 				pixelCache_next(3) <= dataR;
 				
@@ -192,14 +205,12 @@ begin
 
 				pixelCache_next(0) <=  pixelCache_reg(1);
 				pixelCache_next(1) <= dataR;
-				-- 2*a6 - 2*a4
-				Gx_next <= signed('0' & std_logic_vector(signed('0' & A6) - signed('0' & A4)) & '0');
-				
+			
 				if lastRow = '0' then 
 					-- prepare to read one row below the center position.
 					addr_read_next <= std_logic_vector(unsigned(addr_reg) + width_step);
 				else
-					-- Handle top border, by reading center position again.
+					-- Handle bottom border, by reading center position again.
 					addr_read_next <= addr_reg;
 				end if;									
 				
@@ -209,48 +220,48 @@ begin
 
 				pixelCache_next(4) <=  pixelCache_reg(5);
 				pixelCache_next(5) <= dataR;
-				-- a1 + 2*a2 + a3
-				--Gy_next <= signed( std_logic_vector(( "00" & A1) + ('0' & A2 & '0') + ( "00" & A3) ));
-				-- a3 - a1
-				Gx_next <= Gx_reg + signed('0' & std_logic_vector(signed('0' & A3) - signed('0' & A1)));
-				
-				if firstColumn = '1'then
-					-- Handle left border.
-					pixelCache_next(0) <= A3 & A3;
-					pixelCache_next(2) <= A6 & A6; --pixelCache_reg(3)(7 downto 0) & pixelCache_reg(3)(15 downto 8);
-					pixelCache_next(4) <= dataR(7 downto 0) & dataR(7 downto 0);
-				end if;
-				if lastColumn = '1'then
-					-- ToDo not working yet ....
-					-- Handle right border. -- 
-					pixelCache_next(1) <= B2 & B2; --pixelCache_reg(0)(15 downto 8) & pixelCache_reg(1)(15 downto 8);
-					pixelCache_next(3) <= B6 & B6; --pixelCache_reg(3)(15 downto 8) & pixelCache_reg(3)(15 downto 8);
-					pixelCache_next(5) <= dataR(15 downto 8) & dataR(15 downto 8);
-				end if;
 			
 			when writeData =>
-				-- a7 + 2*a8 + a9
-				--Gy_next <= Gy_reg - ...
-				-- a9 - a7
-				Gx_next <= Gx_reg + signed('0' & std_logic_vector(signed('0' & A9) - signed('0' & A7)));
-			
-				dataW <= A9 & A8;  
-				dataW <= abs(Gx_reg) + (Gy_reg);
-				rw_int <= '0'; -- write mode.
+				-- Gx = (a3 + 2*a6 + a9) - (a1 + 2*a4 + a7)
+				tmp_Gx_A := signed('0' & (unsigned(A3) + unsigned('0' & A6 & '0') + unsigned(A9)));
+				tmp_Gx_A := tmp_Gx_A - signed('0' & (unsigned(A1) + unsigned('0' & A4 & '0') + unsigned(A7)));
+
+				tmp_Gx_B := signed('0' & (unsigned(B3) + unsigned('0' & B6 & '0') + unsigned(B9)));
+				tmp_Gx_B := tmp_Gx_B - signed('0' & (unsigned(B1) + unsigned('0' & B4 & '0') + unsigned(B7)));				
+				
+				-- Gy = (a1 + 2*a2 + a3) - (a7 + 2*a8 + a9)				
+				tmp_Gy_A := signed('0' & (unsigned(A1) + unsigned('0' & A2 & '0') + unsigned(A3)));
+				tmp_Gy_A := tmp_Gy_A - signed('0' & (unsigned(A7) + unsigned('0' & A8 & '0') + unsigned(A9)));
+
+				tmp_Gy_B := signed('0' & (unsigned(B1) + unsigned('0' & B2 & '0') + unsigned(B3)));
+				tmp_Gy_B := tmp_Gy_B - signed('0' & (unsigned(B7) + unsigned('0' & B8 & '0') + unsigned(B9)));				
+				
+				resultA := abs(tmp_Gx_A) + abs(tmp_Gy_A);
+				resultB := abs(tmp_Gx_B) + abs(tmp_Gy_B);
+				dataW <= byte_t(resultB(10 downto 3)) & byte_t(resultA(10 downto 3));
+				
+				if firstColumn = '1'then
+					rw_int <= '1'; -- don't write on first column.
+					state_next <= readSetup;
+				else
+					rw_int <= '0'; -- write mode.
+				end if;		
 				
 				-- Check if image is done
-				if lastRow = '1' and lastColumn = '1' then  
+				if lastRow = '1' and lastColumn1 = '1' then  
 					state_next <= doneImg;
 				else
 					-- Check for end of row
-					if lastColumn = '1' then
+					if lastColumn1 = '1' then
 						state_next <= startRow;
+						-- Move to next row 
+						addr_row_next <= std_logic_vector(unsigned(addr_row_reg) + width_step);
 					else
 						state_next <= readSetup;
+						-- Move to next memory location.					
+						addr_next <= std_logic_vector(unsigned(addr_reg) + 1);
 					end if;
 				end if;
-				-- Move to next memory location.					
-				addr_next <= std_logic_vector(unsigned(addr_reg) + 1);				
 											
 			when doneImg =>
 				finish <= '1';
@@ -273,12 +284,8 @@ begin
 			addr_read_reg <= addr_read_next;
 			addr_row_reg <= addr_row_next;
 			pixelCache_reg <= pixelCache_next;	
-			Gx_reg <= Gx_next;
-			Gy_reg <= Gy_next;
 		end if;
 	end process registerTransfer;
 
 end structure;
-
-
 
