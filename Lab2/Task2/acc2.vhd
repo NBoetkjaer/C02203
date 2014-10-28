@@ -59,9 +59,10 @@ ARCHITECTURE structure OF acc IS
 	-- All internal signals are defined here
 	type StateType is (idle, startRow, readSetup, readCenter, readAbove, readBelow,  writeData, doneImg);  
 
-	-- Declare a type that can hold the cached pixel data.
-	type RowCache_t is array (5 downto 0) of halfword_t;
-
+	-- Declare a type that can hold the cached pixel data.	
+	subtype RowCache_t is std_logic_vector( 5*8 - 1 downto 0);
+	type PixCache_t is array (2 downto 0) of RowCache_t; -- 3 rows of 5 pixels cache.
+	
 	-- Declare signals
 	signal state, state_next : StateType; -- Two signals to hold the states of the FSM.
 	signal addr_reg, addr_next : word_t;			-- Address being processed. 
@@ -78,39 +79,28 @@ ARCHITECTURE structure OF acc IS
 	signal firstRow, lastRow		: std_logic;	-- Signals to indicate the first and last scanLine.
 	signal firstColumn, lastColumn	: std_logic;	-- Signals to indicate the first and last column.
 	signal firstColumn1, lastColumn1: std_logic;	-- Signals to indicate the the write addr. in on first and last column.
-	-- Pixel cache holds 12 x 8 bit pixels (organized in 6 pixel pairs of each 16 bit )
-	signal pixelCache_reg,  pixelCache_next: RowCache_t;	
-	-- Declare convenient aliases for pixels.
-	-- A1-9 and B1-9 represents a 3x3 neighborhood.
-	----------------------------      A:
-	--    0       |       1    |      A1 A2 A3
-	-- A1 | A2/B1 | A3/B2 | B3 |      A4 A5 A6
-	----------------------------      A7 A8 A9
-	--    2       |       3    |      B: 
-	-- A4 | A5/B4 | A6/B5 | B6 |      B1 B2 B3
---------------------------------	  B4 B5 B6
-	--    4       |       5    |      B7 B8 B9
-	-- A7 | A8/B7 | A9/B8 | B9 |
-	----------------------------
-	alias A1 : byte_t is pixelCache_reg(0)(7 downto 0);
-	alias A2 : byte_t is pixelCache_reg(0)(15 downto 8);
-	alias A3 : byte_t is pixelCache_reg(1)(7 downto 0);		
-	alias A4 : byte_t is pixelCache_reg(2)(7 downto 0);
-	alias A5 : byte_t is pixelCache_reg(2)(15 downto 8);
-	alias A6 : byte_t is pixelCache_reg(3)(7 downto 0);
-	alias A7 : byte_t is pixelCache_reg(4)(7 downto 0);
-	alias A8 : byte_t is pixelCache_reg(4)(15 downto 8);
-	alias A9 : byte_t is pixelCache_reg(5)(7 downto 0);
+	-- Pixel cache holds 15 x 8 bit pixels (organized in 3 rows of 5 pixels)	
+	signal pix_reg, pix_next :PixCache_t;
+	-- Declare convenient aliases into pixels cache.
+	alias A1: byte_t is pix_reg(0)(7 downto 0); 
+	alias A2: byte_t is pix_reg(0)(15 downto 8);
+	alias A3: byte_t is pix_reg(0)(23 downto 16);
+	alias A4: byte_t is pix_reg(1)(7 downto 0); 
+	alias A5: byte_t is pix_reg(1)(15 downto 8);
+	alias A6: byte_t is pix_reg(1)(23 downto 16);
+	alias A7: byte_t is pix_reg(2)(7 downto 0); 
+	alias A8: byte_t is pix_reg(2)(15 downto 8);
+	alias A9: byte_t is pix_reg(2)(23 downto 16);	
 
-	alias B1 : byte_t is pixelCache_reg(0)(15 downto 8);
-	alias B2 : byte_t is pixelCache_reg(1)(7 downto 0);
-	alias B3 : byte_t is pixelCache_reg(1)(15 downto 8);
-	alias B4 : byte_t is pixelCache_reg(2)(15 downto 8);
-	alias B5 : byte_t is pixelCache_reg(3)(7 downto 0);
-	alias B6 : byte_t is pixelCache_reg(3)(15 downto 8);
-	alias B7 : byte_t is pixelCache_reg(4)(15 downto 8);
-	alias B8 : byte_t is pixelCache_reg(5)(7 downto 0);
-	alias B9 : byte_t is pixelCache_reg(5)(15 downto 8);
+	alias B1: byte_t is pix_reg(0)(15 downto 8); 
+	alias B2: byte_t is pix_reg(0)(23 downto 16);
+	alias B3: byte_t is pix_reg(0)(31 downto 24);
+	alias B4: byte_t is pix_reg(1)(15 downto 8); 
+	alias B5: byte_t is pix_reg(1)(23 downto 16);
+	alias B6: byte_t is pix_reg(1)(31 downto 24);
+	alias B7: byte_t is pix_reg(2)(15 downto 8); 
+	alias B8: byte_t is pix_reg(2)(23 downto 16);
+	alias B9: byte_t is pix_reg(2)(31 downto 24);
 
 begin
 	-----------------------------
@@ -139,7 +129,7 @@ begin
 	firstColumn1	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + 1) else '0';
 	LastColumn1 	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + (width_step)) else '0';
 	
-	FSMD: process(state, start, firstRow, lastRow, firstColumn, lastcolumn1, dataR, addr_reg, addr_read_reg, addr_row_reg, pixelCache_reg)
+	FSMD: process(state, start, firstRow, lastRow, firstColumn, lastcolumn1, dataR, addr_reg, addr_read_reg, addr_row_reg, pix_reg)
 		variable tmp_Gx_A : signed(10 downto 0);
 		variable tmp_Gy_A : signed(10 downto 0);
 		variable tmp_Gx_B : signed(10 downto 0);
@@ -153,11 +143,11 @@ begin
 		rw_int <= '1';	-- read mode
 		req <= '1'; -- request memory interface.
 		dataW <= (others => '0');		
-
-		pixelCache_next <= pixelCache_reg;
+		
 		addr_next <= addr_reg;
 		addr_read_next <= addr_read_reg;		
 		addr_row_next <= addr_row_reg;
+		pix_next <= pix_reg;
 		
 		case state is			
 			when idle =>		
@@ -180,16 +170,31 @@ begin
 					state_next <= readCenter;
 				end if;
 				
-				rw_int <= '1'; -- Read mode.
+				rw_int <= '1'; -- Read mode.								
+				-- Roll the pixel cache two pixels
+				pix_next(0)(23 downto 0) <= pix_reg(0)(39 downto 16);
+				pix_next(1)(23 downto 0) <= pix_reg(1)(39 downto 16);
+				pix_next(2)(23 downto 0) <= pix_reg(2)(39 downto 16);
+				-- Handle the left border.
+				if firstColumn1 = '1' then					
+					pix_next(0)(7 downto 0) <= pix_reg(0)(31 downto 24);
+					pix_next(1)(7 downto 0) <= pix_reg(1)(31 downto 24);
+					pix_next(2)(7 downto 0) <= pix_reg(2)(31 downto 24); 								
+				end if;
+				-- Handle the right border.
+				if lastColumn1 = '1' then
+					pix_next(0)(31 downto 24) <= pix_reg(0)(39 downto 32);
+					pix_next(1)(31 downto 24) <= pix_reg(1)(39 downto 32);
+					pix_next(2)(31 downto 24) <= pix_reg(2)(39 downto 32);
+				end if;								
 				-- prepare to read center position.
-				addr_read_next <= addr_reg;	
+				addr_read_next <= addr_reg;					
 				
 			when readCenter =>
 				state_next <= readAbove;
 				rw_int <= '1'; -- Read mode.
-
-				pixelCache_next(2) <=  pixelCache_reg(3);
-				pixelCache_next(3) <= dataR;
+				-- Insert two new pixels into cache
+				pix_next(1)(39 downto 24)  <= dataR;
 				
 				if firstRow = '0' then				
 					-- prepare to read one row above the center position.
@@ -202,9 +207,8 @@ begin
 			when readAbove =>
 				state_next <= readBelow;
 				rw_int <= '1'; -- Read mode.
-
-				pixelCache_next(0) <=  pixelCache_reg(1);
-				pixelCache_next(1) <= dataR;
+				-- Insert two new pixels into cache
+				pix_next(0)(39 downto 24)  <= dataR;				
 			
 				if lastRow = '0' then 
 					-- prepare to read one row below the center position.
@@ -216,11 +220,10 @@ begin
 				
 			when readBelow =>
 				state_next <= writeData;
-				rw_int <= '1'; -- Read mode.	
-
-				pixelCache_next(4) <=  pixelCache_reg(5);
-				pixelCache_next(5) <= dataR;
-			
+				rw_int <= '1'; -- Read mode.			
+				-- Insert two new pixels into cache								
+				pix_next(2)(39 downto 24)  <= dataR;				
+				
 			when writeData =>
 				-- Gx = (a3 + 2*a6 + a9) - (a1 + 2*a4 + a7)
 				tmp_Gx_A := signed('0' & (unsigned(A3) + unsigned('0' & A6 & '0') + unsigned(A9)));
@@ -238,6 +241,7 @@ begin
 				
 				resultA := abs(tmp_Gx_A) + abs(tmp_Gy_A);
 				resultB := abs(tmp_Gx_B) + abs(tmp_Gy_B);
+				-- Divide by 8.
 				dataW <= byte_t(resultB(10 downto 3)) & byte_t(resultA(10 downto 3));
 				
 				if firstColumn = '1'then
@@ -282,8 +286,8 @@ begin
 			state <= state_next;
 			addr_reg <= addr_next;
 			addr_read_reg <= addr_read_next;
-			addr_row_reg <= addr_row_next;
-			pixelCache_reg <= pixelCache_next;	
+			addr_row_reg <= addr_row_next;			
+			pix_reg <= pix_next;
 		end if;
 	end process registerTransfer;
 
