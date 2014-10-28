@@ -49,10 +49,9 @@ add wave -label state /testbench/Accelerator/state
 
 add wave -label firstRow /testbench/Accelerator/firstRow
 add wave -label lastRow /testbench/Accelerator/lastRow
-add wave -label firstColumn /testbench/Accelerator/firstColumn
-add wave -label firstColumn1 /testbench/Accelerator/firstColumn1
-add wave -label lastColumn /testbench/Accelerator/lastColumn
-add wave -label lastColumn1 /testbench/Accelerator/lastColumn1
+add wave -label firstColumnR /testbench/Accelerator/firstColumnR
+add wave -label firstColumnW /testbench/Accelerator/firstColumnW
+add wave -label lastColumnW /testbench/Accelerator/lastColumnW
 
 
 run 2000 ns

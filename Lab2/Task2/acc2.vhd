@@ -52,13 +52,11 @@ ARCHITECTURE structure OF acc IS
 	constant img_height	: natural := 288;
 	constant width_step	: natural := img_width/2;
 	constant last_addr	: natural := width_step * img_height;
-	
 	-- start address of processed image in memory
 	constant mem_start  : natural := img_width/2*img_height;
-
-	-- All internal signals are defined here
+	
+	-- Declare the state type.
 	type StateType is (idle, startRow, readSetup, readCenter, readAbove, readBelow,  writeData, doneImg);  
-
 	-- Declare a type that can hold the cached pixel data.	
 	subtype RowCache_t is std_logic_vector( 5*8 - 1 downto 0);
 	type PixCache_t is array (2 downto 0) of RowCache_t; -- 3 rows of 5 pixels cache.
@@ -77,8 +75,8 @@ ARCHITECTURE structure OF acc IS
 	
 	-- Signals used for border handling.
 	signal firstRow, lastRow		: std_logic;	-- Signals to indicate the first and last scanLine.
-	signal firstColumn, lastColumn	: std_logic;	-- Signals to indicate the first and last column.
-	signal firstColumn1, lastColumn1: std_logic;	-- Signals to indicate the the write addr. in on first and last column.
+	signal firstColumnR	: std_logic;				-- Signal to indicate if read addr. is on the first column.
+	signal firstColumnW, lastColumnW: std_logic;	-- Signals to indicate if the write addr. is on first and last column.
 	-- Pixel cache holds 15 x 8 bit pixels (organized in 3 rows of 5 pixels)	
 	signal pix_reg, pix_next :PixCache_t;
 	-- Declare convenient aliases into pixels cache.
@@ -123,13 +121,13 @@ begin
 	-- Assign address to either read or write address. Note that write address is lagging one behind.
 	addr <= addr_read_reg when rw_int = '1' else  std_logic_vector(unsigned(addr_reg) + mem_start -  1);
 	-- Generate signals to indicate the image borders.
-	firstRow		<= '1' when unsigned(addr_reg) < width_step else '0';
-	lastRow 		<= '1' when unsigned(addr_reg) > (last_addr - width_step) else '0';
-	firstColumn 	<= '1' when addr_reg = addr_row_reg else '0';
-	firstColumn1	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + 1) else '0';
-	LastColumn1 	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + (width_step)) else '0';
+	firstRow		<= '1' when unsigned(addr_row_reg) = 0 else '0';
+	lastRow 		<= '1' when unsigned(addr_row_reg) = (last_addr - width_step) else '0';
+	firstColumnR 	<= '1' when addr_reg = addr_row_reg else '0';
+	firstColumnW	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + 1) else '0';
+	LastColumnW 	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + (width_step)) else '0';
 	
-	FSMD: process(state, start, firstRow, lastRow, firstColumn, lastcolumn1, dataR, addr_reg, addr_read_reg, addr_row_reg, pix_reg)
+	FSMD: process(state, start, firstRow, lastRow, firstColumnR, firstColumnW, lastColumnW, dataR, addr_reg, addr_read_reg, addr_row_reg, pix_reg)
 		variable tmp_Gx_A : signed(10 downto 0);
 		variable tmp_Gy_A : signed(10 downto 0);
 		variable tmp_Gx_B : signed(10 downto 0);
@@ -163,26 +161,24 @@ begin
 				addr_next <= addr_row_reg; -- Set addr to start of row.				
 				
 			when readSetup =>
-				if  LastColumn1 = '1' then 
+				if  LastColumnW = '1' then 
 					-- When processing last column we should not read any data.
 					state_next <= writeData; 
 				else
 					state_next <= readCenter;
-				end if;
-				
-				rw_int <= '1'; -- Read mode.								
+				end if;							
 				-- Roll the pixel cache two pixels
 				pix_next(0)(23 downto 0) <= pix_reg(0)(39 downto 16);
 				pix_next(1)(23 downto 0) <= pix_reg(1)(39 downto 16);
 				pix_next(2)(23 downto 0) <= pix_reg(2)(39 downto 16);
 				-- Handle the left border.
-				if firstColumn1 = '1' then					
+				if firstColumnW = '1' then					
 					pix_next(0)(7 downto 0) <= pix_reg(0)(31 downto 24);
 					pix_next(1)(7 downto 0) <= pix_reg(1)(31 downto 24);
 					pix_next(2)(7 downto 0) <= pix_reg(2)(31 downto 24); 								
 				end if;
 				-- Handle the right border.
-				if lastColumn1 = '1' then
+				if lastColumnW = '1' then
 					pix_next(0)(31 downto 24) <= pix_reg(0)(39 downto 32);
 					pix_next(1)(31 downto 24) <= pix_reg(1)(39 downto 32);
 					pix_next(2)(31 downto 24) <= pix_reg(2)(39 downto 32);
@@ -192,7 +188,6 @@ begin
 				
 			when readCenter =>
 				state_next <= readAbove;
-				rw_int <= '1'; -- Read mode.
 				-- Insert two new pixels into cache
 				pix_next(1)(39 downto 24)  <= dataR;
 				
@@ -206,7 +201,6 @@ begin
 				
 			when readAbove =>
 				state_next <= readBelow;
-				rw_int <= '1'; -- Read mode.
 				-- Insert two new pixels into cache
 				pix_next(0)(39 downto 24)  <= dataR;				
 			
@@ -220,7 +214,6 @@ begin
 				
 			when readBelow =>
 				state_next <= writeData;
-				rw_int <= '1'; -- Read mode.			
 				-- Insert two new pixels into cache								
 				pix_next(2)(39 downto 24)  <= dataR;				
 				
@@ -244,19 +237,18 @@ begin
 				-- Divide by 8.
 				dataW <= byte_t(resultB(10 downto 3)) & byte_t(resultA(10 downto 3));
 				
-				if firstColumn = '1'then
-					rw_int <= '1'; -- don't write on first column.
+				if firstColumnR = '1'then
 					state_next <= readSetup;
 				else
 					rw_int <= '0'; -- write mode.
 				end if;		
 				
 				-- Check if image is done
-				if lastRow = '1' and lastColumn1 = '1' then  
+				if lastRow = '1' and lastColumnW = '1' then  
 					state_next <= doneImg;
 				else
 					-- Check for end of row
-					if lastColumn1 = '1' then
+					if lastColumnW = '1' then
 						state_next <= startRow;
 						-- Move to next row 
 						addr_row_next <= std_logic_vector(unsigned(addr_row_reg) + width_step);
