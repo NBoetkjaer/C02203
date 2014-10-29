@@ -53,7 +53,7 @@ ARCHITECTURE structure OF acc IS
 	constant width_step	: natural := img_width/2;
 	constant last_addr	: natural := width_step * img_height;
 	-- start address of processed image in memory
-	constant mem_start  : natural := img_width/2*img_height;
+	constant mem_start  : natural := width_step * img_height;
 	
 	-- Declare the state type.
 	type StateType is (idle, startRow, readSetup, readCenter, readAbove, readBelow,  writeData, doneImg);  
@@ -132,8 +132,8 @@ begin
 		variable tmp_Gy_A : signed(10 downto 0);
 		variable tmp_Gx_B : signed(10 downto 0);
 		variable tmp_Gy_B : signed(10 downto 0);
-		variable resultA: signed(10 downto 0);
-		variable resultB: signed(10 downto 0);
+		variable resultA: unsigned(10 downto 0);
+		variable resultB: unsigned(10 downto 0);
 	begin
 		-- Default values
 		state_next <= state;
@@ -232,8 +232,8 @@ begin
 				tmp_Gy_B := signed('0' & (unsigned(B1) + unsigned('0' & B2 & '0') + unsigned(B3)));
 				tmp_Gy_B := tmp_Gy_B - signed('0' & (unsigned(B7) + unsigned('0' & B8 & '0') + unsigned(B9)));				
 				
-				resultA := abs(tmp_Gx_A) + abs(tmp_Gy_A);
-				resultB := abs(tmp_Gx_B) + abs(tmp_Gy_B);
+				resultA := unsigned(abs(tmp_Gx_A)) + unsigned(abs(tmp_Gy_A));
+				resultB := unsigned(abs(tmp_Gx_B)) + unsigned(abs(tmp_Gy_B));
 				-- Divide by 8.
 				dataW <= byte_t(resultB(10 downto 3)) & byte_t(resultA(10 downto 3));
 				
