@@ -1,0 +1,75 @@
+
+\section*{Time plan}
+
+\date{\today}
+\newcommand{\daywidth}{3.5 cm}
+\begin{tikzpicture}[x=\daywidth, y=-1cm, node distance=0 cm,outer sep = 0pt]
+
+% Style for weeks
+\tikzstyle{week}=[draw, rectangle,  minimum height=1cm, minimum width=0.875cm, fill=brown!20,anchor=south west]
+
+                      	
+% Style for Task
+\tikzstyle{Task}=[draw, rectangle split parts=2, text width=8.5cm, minimum height=1 cm, minimum width=3 cm, fill=brown!20,anchor=north east]
+
+% Styles for events
+% Duration of sequences
+\tikzstyle{Tasks}=[rectangle,draw,minimum width=0.875cm, anchor=north west]
+
+%Style for type of sequence
+\tikzstyle{task_size1}=[Tasks,minimum height=1cm]
+\tikzstyle{task_size2}=[Tasks,minimum height=2cm]
+\tikzstyle{task_size3}=[Tasks,minimum height=3cm]
+\tikzstyle{Documentation}=[task_size1, fill=cyan!10]
+
+% Positioning labels for days and hours
+\node[week] (1) at (1,9) {1};
+\node[week] (2) at (1.25,9) {2};
+\node[week] (3) [right= of 2] {3};
+\node[week] (4) [right= of 3] {4};
+\node[week] (5) [right= of 4] {5};
+\node[week] (6) [right= of 5] {6};
+\node[week] (7) [right= of 6] {7};
+\node[Task] (a) at (1,8) {Week};
+\node[Task, fill=gray!80] (b) [below = of a] {Work on Task 0};
+\node[Task, fill=gray!70] (c) [below = of b] {Develop ASMD chart for HW-accelerator};
+\node[Task, fill=gray!60] (d) [below = of c] {Draw block diagram};
+\node[Task, fill=gray!50] (e) [below = of d] {Develop VHDL};
+\node[Task, fill=gray!40] (f) [below = of e] {VHDL simulations};
+\node[Task, fill=gray!30] (g) [below = of f] {Hard ware verification};
+\node[Task, fill=gray!20] (h) [below = of g] {Design optimazation};
+\node[Task, fill=gray!10] (i) [below = of h] {Optiontional expansion};
+\node[Task, fill=cyan!10] (j) [below  = of i] {Documentation};
+%Position of sequences
+
+\node[task_size1, fill=gray!80, minimum width=0.875cm, minimum height=1cm] (prob_of_b) at (1,9) { };
+
+\node[task_size1, fill=gray!70, minimum width=0.875cm, minimum height=1cm] (prob_of_c) at (1.25,10) { };
+
+\node[task_size1, fill=gray!60, minimum width=0.875cm, minimum height=1cm] (prob_of_d) at (1.25,11) { };
+
+\node[task_size1, fill=gray!50, minimum width=0.875cm, minimum height=1cm] (prob_of_e) at (1.5,12) { };
+\node[task_size1, fill=gray!50, minimum width=0.875cm, minimum height=1cm] (prob_of_e) at (1.75,12) { };
+\node[task_size1, fill=gray!50, minimum width=0.875cm, minimum height=1cm] (prob_of_e) at (2,12) { };
+\node[task_size1, fill=gray!50, minimum width=0.875cm, minimum height=1cm] (prob_of_e) at (2.25,12) { };
+
+\node[task_size1, fill=gray!40, minimum width=0.875cm, minimum height=1cm] (prob_of_f) at (1.75,13) { };
+\node[task_size1, fill=gray!40, minimum width=0.875cm, minimum height=1cm] (prob_of_f) at (2,13) { };
+
+\node[task_size1, fill=gray!30, minimum width=0.875cm, minimum height=1cm] (prob_of_g) at (2,14) { };
+
+\node[task_size1, fill=gray!20, minimum width=0.875cm, minimum height=1cm] (prob_of_h) at (2.25,15) { };
+
+\node[task_size1, fill=gray!10, minimum width=0.875cm, minimum height=1cm] (prob_of_i) at (2.25,16) { };
+
+\node[Documentation, minimum width=0.875cm] (DocA) at (1,17) { };
+\node[Documentation, minimum width=0.875cm] (DocA) at (1.25,17) { };
+\node[Documentation, minimum width=0.875cm] (DocA) at (1.5,17) { };
+\node[Documentation, minimum width=0.875cm] (DocA) at (1.75,17) { };
+\node[Documentation, minimum width=0.875cm] (DocA) at (2,17) { };
+\node[Documentation, minimum width=0.875cm] (DocA) at (2.25,17) { };
+\node[Documentation, minimum width=0.875cm] (DocA) at (2.5,17) { };
+\end{tikzpicture}
+\\
+\\
+
