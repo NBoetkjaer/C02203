@@ -61,6 +61,8 @@ work
 !*.bib
 !*.dia
 !*.svg
+!*.png
+!*.jpg
 !*.pdf
 !*.gv
 !*.pgm
