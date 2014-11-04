@@ -56,7 +56,7 @@ ARCHITECTURE structure OF acc IS
 	constant mem_start  : natural := width_step * img_height;
 	
 	-- Declare the state type.
-	type StateType is (idle, startRow, readSetup, readCenter, readAbove, readBelow,  writeData, doneImg);  
+	type StateType is (idle, startRow, readSetup, readCenter, readAbove, readBelow, calculateFilter, writeData, doneImg);  
 	-- Declare a type that can hold the cached pixel data.	
 	subtype RowCache_t is std_logic_vector( 5*8 - 1 downto 0);
 	type PixCache_t is array (2 downto 0) of RowCache_t; -- 3 rows of 5 pixels cache.
@@ -66,6 +66,7 @@ ARCHITECTURE structure OF acc IS
 	signal addr_reg, addr_next : word_t;			-- Address being processed. 
 	signal addr_row_reg, addr_row_next: word_t;		-- Address to start of current row (scan line).
 	signal addr_read_reg, addr_read_next: word_t;	-- Current read address.
+	signal dataW_reg, dataW_next: halfword_t;
 	signal rw_int : std_logic;	-- internal signal (wired to rw)
 	
 	-- ToDo ...
@@ -119,7 +120,8 @@ begin
 
 	rw <= rw_int; -- Wire internal signal to entity out port .
 	-- Assign address to either read or write address. Note that write address is lagging one behind.
-	addr <= addr_read_reg when rw_int = '1' else  std_logic_vector(unsigned(addr_reg) + mem_start -  1);
+	addr <= addr_read_reg when rw_int = '1' else  std_logic_vector(unsigned(addr_reg) + mem_start -  1);	
+	dataW <= dataW_reg;
 	-- Generate signals to indicate the image borders.
 	firstRow		<= '1' when unsigned(addr_row_reg) = 0 else '0';
 	lastRow 		<= '1' when unsigned(addr_row_reg) = (last_addr - width_step) else '0';
@@ -140,7 +142,8 @@ begin
 		finish <= '0';
 		rw_int <= '1';	-- read mode
 		req <= '1'; -- request memory interface.
-		dataW <= (others => '0');		
+		--dataW <= (others => '0');
+		dataW_next <= dataW_reg;
 		
 		addr_next <= addr_reg;
 		addr_read_next <= addr_read_reg;		
@@ -163,7 +166,7 @@ begin
 			when readSetup =>
 				if  LastColumnW = '1' then 
 					-- When processing last column we should not read any data.
-					state_next <= writeData; 
+					state_next <= calculateFilter; 
 				else
 					state_next <= readCenter;
 				end if;							
@@ -213,11 +216,12 @@ begin
 				end if;									
 				
 			when readBelow =>
-				state_next <= writeData;
+				state_next <= calculateFilter;
 				-- Insert two new pixels into cache								
-				pix_next(2)(39 downto 24)  <= dataR;				
+				pix_next(2)(39 downto 24)  <= dataR;
 				
-			when writeData =>
+			when calculateFilter =>
+				state_next <= writeData;					
 				-- Gx = (a3 + 2*a6 + a9) - (a1 + 2*a4 + a7)
 				tmp_Gx_A := signed('0' & (unsigned(A3) + unsigned('0' & A6 & '0') + unsigned(A9)));
 				tmp_Gx_A := tmp_Gx_A - signed('0' & (unsigned(A1) + unsigned('0' & A4 & '0') + unsigned(A7)));
@@ -235,8 +239,9 @@ begin
 				resultA := unsigned(abs(tmp_Gx_A)) + unsigned(abs(tmp_Gy_A));
 				resultB := unsigned(abs(tmp_Gx_B)) + unsigned(abs(tmp_Gy_B));
 				-- Divide by 8.
-				dataW <= byte_t(resultB(10 downto 3)) & byte_t(resultA(10 downto 3));
-				
+				dataW_next <= byte_t(resultB(10 downto 3)) & byte_t(resultA(10 downto 3));
+
+			when writeData =>				
 				if firstColumnR = '1'then
 					state_next <= readSetup;
 				else
@@ -280,6 +285,7 @@ begin
 			addr_read_reg <= addr_read_next;
 			addr_row_reg <= addr_row_next;			
 			pix_reg <= pix_next;
+			dataW_reg <= dataW_next;
 		end if;
 	end process registerTransfer;
 
