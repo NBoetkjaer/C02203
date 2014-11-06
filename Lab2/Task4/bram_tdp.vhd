@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity bram_tdp is
 
 generic (
-    DATA_WIDTH    : integer := 32;
+    DATA_WIDTH    : integer := 16;
     ADDR_WIDTH    : integer := 10
 );
 
