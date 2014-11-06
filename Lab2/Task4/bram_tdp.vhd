@@ -6,7 +6,7 @@ entity bram_tdp is
 
 generic (
     DATA_WIDTH    : integer := 16;
-    ADDR_WIDTH    : integer := 10
+    ADDR_WIDTH    : integer := 8
 );
 
 port (
@@ -46,9 +46,9 @@ process(clk)
 begin
     if( rising_edge(clk) ) then
         if(b_wr='1') then
-            mem(to_integer(b_addr)) := b_din;
+			mem(to_integer(b_addr)) := b_din;
         end if;
-        b_dout <= mem(to_integer(b_addr));
+		b_dout <= mem(to_integer(b_addr));
     end if;
 end process;
 end rtl;
