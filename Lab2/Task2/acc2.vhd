@@ -43,7 +43,7 @@ ENTITY acc IS
 END acc;
 
 --------------------------------------------------------------------------------
--- The desription of the accelerator.
+-- The description of the accelerator.
 --------------------------------------------------------------------------------
 
 ARCHITECTURE structure OF acc IS
@@ -69,10 +69,11 @@ ARCHITECTURE structure OF acc IS
 	signal dataW_reg, dataW_next: halfword_t;
 	signal rw_int : std_logic;	-- internal signal (wired to rw)
 	
-	-- ToDo ...
-	-- Accumulator register used to pipeline the gradient calculations
-	-- maximum range is [-4*255; 4*255] = [-1020,1020]
-	-- signal Gx_reg, Gx_next, Gy_reg, Gy_next: signed(10 downto 0); 
+	-- Signals used for sobel filter calculation.
+	-- maximum range is [-4*255; 4*255] = [-1020,1020]	
+	signal gxA_1, gxA_2, gxB_1, gxB_2, gyA_1, gyA_2, gyB_1, gyB_2: signed(10 downto 0);
+	signal gxA, gxB, gyA, gyB: signed(10 downto 0);
+	signal sobelA, sobelB: unsigned(10 downto 0);	
 	
 	-- Signals used for border handling.
 	signal firstRow, lastRow		: std_logic;	-- Signals to indicate the first and last scanLine.
@@ -129,13 +130,7 @@ begin
 	firstColumnW	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + 1) else '0';
 	LastColumnW 	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + (width_step)) else '0';
 	
-	FSMD: process(state, start, firstRow, lastRow, firstColumnR, firstColumnW, lastColumnW, dataR, addr_reg, addr_read_reg, addr_row_reg, pix_reg)
-		variable tmp_Gx_A : signed(10 downto 0);
-		variable tmp_Gy_A : signed(10 downto 0);
-		variable tmp_Gx_B : signed(10 downto 0);
-		variable tmp_Gy_B : signed(10 downto 0);
-		variable resultA: unsigned(10 downto 0);
-		variable resultB: unsigned(10 downto 0);
+	FSMD: process(state, start, firstRow, lastRow, firstColumnR, firstColumnW, lastColumnW, dataR, addr_reg, addr_read_reg, addr_row_reg, pix_reg, sobelA, sobelB)
 	begin
 		-- Default values
 		state_next <= state;
@@ -222,24 +217,8 @@ begin
 				
 			when calculateFilter =>
 				state_next <= writeData;					
-				-- Gx = (a3 + 2*a6 + a9) - (a1 + 2*a4 + a7)
-				tmp_Gx_A := signed('0' & (unsigned(A3) + unsigned('0' & A6 & '0') + unsigned(A9)));
-				tmp_Gx_A := tmp_Gx_A - signed('0' & (unsigned(A1) + unsigned('0' & A4 & '0') + unsigned(A7)));
-
-				tmp_Gx_B := signed('0' & (unsigned(B3) + unsigned('0' & B6 & '0') + unsigned(B9)));
-				tmp_Gx_B := tmp_Gx_B - signed('0' & (unsigned(B1) + unsigned('0' & B4 & '0') + unsigned(B7)));				
-				
-				-- Gy = (a1 + 2*a2 + a3) - (a7 + 2*a8 + a9)				
-				tmp_Gy_A := signed('0' & (unsigned(A1) + unsigned('0' & A2 & '0') + unsigned(A3)));
-				tmp_Gy_A := tmp_Gy_A - signed('0' & (unsigned(A7) + unsigned('0' & A8 & '0') + unsigned(A9)));
-
-				tmp_Gy_B := signed('0' & (unsigned(B1) + unsigned('0' & B2 & '0') + unsigned(B3)));
-				tmp_Gy_B := tmp_Gy_B - signed('0' & (unsigned(B7) + unsigned('0' & B8 & '0') + unsigned(B9)));				
-				
-				resultA := unsigned(abs(tmp_Gx_A)) + unsigned(abs(tmp_Gy_A));
-				resultB := unsigned(abs(tmp_Gx_B)) + unsigned(abs(tmp_Gy_B));
 				-- Divide by 8.
-				dataW_next <= byte_t(resultB(10 downto 3)) & byte_t(resultA(10 downto 3));
+				dataW_next <= byte_t(sobelB(10 downto 3)) & byte_t(sobelA(10 downto 3));
 
 			when writeData =>				
 				if firstColumnR = '1'then
@@ -288,6 +267,31 @@ begin
 			dataW_reg <= dataW_next;
 		end if;
 	end process registerTransfer;
+	
+	
+	-- Combinatorial logic 
+	-- Calculate the Sobel filter on the sliding window.
+	-- Gx = (a3 + 2*a6 + a9) - (a1 + 2*a4 + a7)
+	gxA_1 <= signed('0' & (unsigned(A3) + unsigned('0' & A6 & '0') + unsigned(A9)));
+	gxA_2 <= signed('0' & (unsigned(A1) + unsigned('0' & A4 & '0') + unsigned(A7)));
+	gxA <= gxA_1 - gxA_2;
+	
+	gxB_1 <= signed('0' & (unsigned(B3) + unsigned('0' & B6 & '0') + unsigned(B9)));
+	gxB_2 <= signed('0' & (unsigned(B1) + unsigned('0' & B4 & '0') + unsigned(B7)));
+	gxB <= gxB_1 - gxB_2;	
+	
+	-- Gy = (a1 + 2*a2 + a3) - (a7 + 2*a8 + a9)				
+	gyA_1 <= signed('0' & (unsigned(A1) + unsigned('0' & A2 & '0') + unsigned(A3)));
+	gyA_2 <= signed('0' & (unsigned(A7) + unsigned('0' & A8 & '0') + unsigned(A9)));	
+	gyA <= gyA_1 - gyA_2;
+		
+	gyB_1 <= signed('0' & (unsigned(B1) + unsigned('0' & B2 & '0') + unsigned(B3)));
+	gyB_2 <= signed('0' & (unsigned(B7) + unsigned('0' & B8 & '0') + unsigned(B9)));	
+	gyB <= gyB_1 - gyB_2;	
+	
+	-- Sobel = |Gx| + |Gy|
+	sobelA <= unsigned(abs(gxA)) + unsigned(abs(gyA));
+	sobelB <= unsigned(abs(gxB)) + unsigned(abs(gyB));	
 
 end structure;
 
