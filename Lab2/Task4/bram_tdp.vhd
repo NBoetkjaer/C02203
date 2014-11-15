@@ -34,10 +34,11 @@ begin
 process(clk)
 begin
     if( rising_edge(clk) ) then
-        if(a_wr='1') then
+        a_dout <= mem(to_integer(a_addr));
+		if(a_wr='1') then
             mem(to_integer(a_addr)) := a_din;
         end if;
-        a_dout <= mem(to_integer(a_addr));
+        
     end if;
 end process;
  
@@ -45,10 +46,10 @@ end process;
 process(clk)
 begin
     if( rising_edge(clk) ) then
-        if(b_wr='1') then
+        b_dout <= mem(to_integer(b_addr));
+		if(b_wr='1') then
 			mem(to_integer(b_addr)) := b_din;
-        end if;
-		b_dout <= mem(to_integer(b_addr));
+        end if;		
     end if;
 end process;
 end rtl;
