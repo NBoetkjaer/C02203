@@ -72,6 +72,16 @@ ARCHITECTURE structure OF acc IS
 	signal rw_int : std_logic;	-- internal signal (wired to rw)
 	signal latencyCount_reg, latencyCount_next : unsigned(2 downto 0);
 	
+	signal col_reg, col_next	: unsigned(7 downto 0);
+	signal a_wr, b_wr, out_wr	: std_logic;
+	signal a_addr, b_addr		: unsigned(8 downto 0);
+	signal out_addr				: unsigned(7 downto 0);
+	signal scan0ptr_reg, scan0ptr_next, scan1ptr_reg, scan1ptr_next : unsigned(8 downto 0);
+	signal a_din, b_din, out_din	: halfword_t;
+	signal a_dout, b_dout, out_dout	: halfword_t;
+	signal a_dout_reg, b_dout_reg	: halfword_t;
+	signal mode_reg, mode_next		: std_logic;
+	
 	-- Signals used for sobel filter calculation.
 	-- maximum range is [-4*255; 4*255] = [-1020,1020]	
 	signal gxA_1, gxA_2, gxB_1, gxB_2, gyA_1, gyA_2, gyB_1, gyB_2: signed(10 downto 0);
@@ -123,15 +133,7 @@ port (
     b_dout  : out std_logic_vector(DATA_WIDTH-1 downto 0)
 );
 end component bram_tdp;
-	signal col_reg, col_next	: unsigned(7 downto 0);
-	signal a_wr, b_wr, out_wr		: std_logic;
-	signal a_addr, b_addr			: unsigned(8 downto 0);
-	signal scan0ptr_reg, scan0ptr_next, scan1ptr_reg, scan1ptr_next : unsigned(8 downto 0);
-	signal out_addr : unsigned(7 downto 0);
-	signal a_din, b_din, out_din	: halfword_t;
-	signal a_dout, b_dout, out_dout	: halfword_t;
-	signal a_dout_reg, b_dout_reg	: halfword_t;
-	signal mode_reg, mode_next		: std_logic;
+
 begin
 
 	-- Instantiate a block RAM component
@@ -193,7 +195,7 @@ begin
 	addr <= addr_reg when rw_int = '1' else  std_logic_vector(unsigned(addr_reg) + (mem_start - width_step));	
 	-- Generate signals to indicate the image borders.
 	firstRow		<= '1' when unsigned(addr_row_reg) = 0 else '0';
-	lastRow 		<= '1' when unsigned(addr_row_reg) = (last_addr - width_step) else '0';
+	lastRow 		<= '1' when unsigned(addr_row_reg) = last_addr else '0';
 	
 	a_addr <= scan0ptr_reg; -- Don't used the registered signal (block ram address is already registered)
 	b_addr <= scan1ptr_reg;
@@ -204,7 +206,7 @@ begin
 		mode_next <= mode_reg;
 		a_wr <= '0';
 		b_wr <= '0';
-		out_wr <= '0';		
+		out_wr <= '0';
 		col_next <= col_reg;
 		
 		a_din <= dataR;
@@ -221,12 +223,12 @@ begin
 		latencyCount_next <= (others =>'0');
 		dataR_next <= dataR_reg;
 		
-		addr_next <= addr_reg;		
+		addr_next <= addr_reg;
 		addr_row_next <= addr_row_reg;
 		pix_next <= pix_reg;
 				
-		case state is			
-			when idle =>		
+		case state is
+			when idle =>
 				req <= '0'; -- release memory request
 				addr_row_next <= (others => '0');
 				if start = '1' then
@@ -235,29 +237,33 @@ begin
 				scan0ptr_next <= (others => '0');
 				scan1ptr_next <= to_unsigned(width_step, scan1ptr_next'length);
 				mode_next <= '0'; -- Read mode
-			when startRow =>				
+			when startRow =>
 				state_next <= startRow;
-				addr_next <= addr_row_reg; -- Set addr to start of row.				
+				if lastRow = '1'  and mode_reg = '0'then
+					addr_next <= std_logic_vector(unsigned(addr_row_reg) - width_step);
+				else
+					addr_next <= addr_row_reg; -- Set addr to start of row
+				end if; 
 				latencyCount_next <= latencyCount_reg + 1;
 				if latencyCount_reg = mem_latency then
 					if mode_reg = '0' then 
-						state_next <= readData;							
+						state_next <= readData;
 					else
-						state_next <= writeData;							
+						state_next <= writeData;
 					end if;
 				end if;				
 				col_next <= (others => '0'); -- reset the column counter
 				 -- Set out_addr to ensure the value is ready when entering writeData state.
 				out_addr <= (others => '0');
 				
-			when readData =>		
+			when readData =>
 				dataR_next <= dataR;
 				col_next <=  col_reg + 1; -- Increment the column counter.
 				if col_reg < to_unsigned(width_step, col_reg'length) then
 					a_wr <= '1';
 					if firstRow = '1' then
-						b_wr <= '1';			
-					end if;	
+						b_wr <= '1';
+					end if;
 					-- Increment scanline pointers
 					scan0ptr_next <= scan0ptr_reg + 1;
 					scan1ptr_next <= scan1ptr_reg + 1;
@@ -269,12 +275,12 @@ begin
 					out_wr <= '1';
 					out_addr <= col_reg - outputBuffer_lag; -- Set pointer to output buffer.
 				end if;
-										
+
 				-- Roll the pixel cache two pixels
 				pix_next(0)(23 downto 0) <= pix_reg(0)(39 downto 16);
 				pix_next(1)(23 downto 0) <= pix_reg(1)(39 downto 16);
 				pix_next(2)(23 downto 0) <= pix_reg(2)(39 downto 16);
-				
+										
 				-- Update sliding window with new samples.
 				pix_next(0)(39 downto 24)  <= a_dout;
 				pix_next(1)(39 downto 24)  <= b_dout;
@@ -288,7 +294,7 @@ begin
 				end if;
 				
 				-- Handle the right border.
-				if col_reg = (width_step + outputBuffer_lag - 2) then
+				if col_reg = (width_step + 1) then
 					pix_next(0)(31 downto 24) <= pix_reg(0)(39 downto 32);
 					pix_next(1)(31 downto 24) <= pix_reg(1)(39 downto 32);
 					pix_next(2)(31 downto 24) <= pix_reg(2)(39 downto 32);
@@ -296,22 +302,22 @@ begin
 				
 				-- Check for end of row
 				if col_reg < to_unsigned(width_step  + outputBuffer_lag, col_reg'length) then
-					state_next <= readData;					
+					state_next <= readData;
 				else
 					state_next <= startRow;
 					mode_next <= '1'; -- Continue to write mode.
 				end if;
 
 			when writeData =>
-				rw_int <= '0'; -- Write mode
-				col_next <=  col_reg + 1; -- Increment the column counter.
-				out_addr <= col_next; -- Set pointer to output buffer.
-				dataW <= out_dout; 
-				-- Move to next memory location.
-				addr_next <= std_logic_vector(unsigned(addr_reg) + 1); 
 				-- Check for end of row
-				if firstRow /= '1' AND col_reg < to_unsigned(width_step  + outputBuffer_lag, col_reg'length) then
-					state_next <= writeData;					
+				if firstRow /= '1' AND col_reg < to_unsigned(width_step, col_reg'length) then
+					rw_int <= '0'; -- Write mode
+					col_next <=  col_reg + 1; -- Increment the column counter.
+					out_addr <= col_next; -- Set pointer to output buffer.
+					dataW <= out_dout; 
+					-- Move to next memory location.
+					addr_next <= std_logic_vector(unsigned(addr_reg) + 1);
+					state_next <= writeData;
 				else
 					if lastRow = '1' then
 						state_next <= doneImg;
@@ -321,7 +327,7 @@ begin
 					mode_next <= '0'; -- Continue to read mode.	
 					-- Move to next row 
 					addr_row_next <= std_logic_vector(unsigned(addr_row_reg) + width_step);	
-					-- Check for scan pointer rollover.
+					-- Check for scan pointer roll over.
 					if scan0ptr_reg > to_unsigned(two_width_step -1, scan0ptr_reg'length) then
 						scan0ptr_next <= (others => '0');
 					end if;						
@@ -376,51 +382,14 @@ begin
 	
 	-- Gy = (a1 + 2*a2 + a3) - (a7 + 2*a8 + a9)				
 	gyA_1 <= signed('0' & (unsigned(A1) + unsigned('0' & A2 & '0') + unsigned(A3)));
-	gyA_2 <= signed('0' & (unsigned(A7) + unsigned('0' & A8 & '0') + unsigned(A9)));	
+	gyA_2 <= signed('0' & (unsigned(A7) + unsigned('0' & A8 & '0') + unsigned(A9)));
 	gyA <= gyA_1 - gyA_2;
 		
 	gyB_1 <= signed('0' & (unsigned(B1) + unsigned('0' & B2 & '0') + unsigned(B3)));
-	gyB_2 <= signed('0' & (unsigned(B7) + unsigned('0' & B8 & '0') + unsigned(B9)));	
-	gyB <= gyB_1 - gyB_2;	
+	gyB_2 <= signed('0' & (unsigned(B7) + unsigned('0' & B8 & '0') + unsigned(B9)));
+	gyB <= gyB_1 - gyB_2;
 	
 	-- Sobel = |Gx| + |Gy|
 	sobelA <= unsigned(abs(gxA)) + unsigned(abs(gyA));
 	sobelB <= unsigned(abs(gxB)) + unsigned(abs(gyB));
 end structure;
-
--- start of image in hex...
---		1  2  3  4  5  6
--- 1	5C 6C 52 5C 55 23
--- 2	74 74 62 88 91 5D
--- 3	4A 39 34 78 9D 7C
--- 4	84 56 2C 44 5E 5D
--- 5	92 70 4C 3F 48 58
--- 6	3D 3E 44 39 50 75
-
-
---		 6 5  4 3  2 1 
--- 1	2355 5C52 6C5C 
--- 2	5D91 8862 7474 
--- 3	7C9D 7834 394A 
--- 4	5D5E 442C 5684 
--- 5	5848 3F4C 7092 
--- 6	7550 3944 3E3D 
-
--- Start of sobel  image in hex
---		1  2  3  4  5  6
--- 1	10 0D 0E 1B 36 31
--- 2	0D 1B 15 25 32 46
--- 3	0C 1F 29 44 16 2F
--- 4	33 3B 08 2F 2A 2F
--- 5	2B 27 10 08 12 13
--- 6	1C 13 0C 02 1F 28
-
---	     6 5  4 3  2 1 
--- 1    3136 1B0E 0D10
--- 2    4632 2515 1B0D
--- 3    2F16 4429 1F0C
--- 4    2F2A 2F08 3B33
--- 5    1312 0810 272B
--- 6    281F 020C 131C
-
-
