@@ -79,7 +79,6 @@ ARCHITECTURE structure OF acc IS
 	signal scan0ptr_reg, scan0ptr_next, scan1ptr_reg, scan1ptr_next : unsigned(8 downto 0);
 	signal a_din, b_din, out_din	: halfword_t;
 	signal a_dout, b_dout, out_dout	: halfword_t;
-	signal a_dout_reg, b_dout_reg	: halfword_t;
 	signal mode_reg, mode_next		: std_logic;
 	
 	-- Signals used for sobel filter calculation.
@@ -200,8 +199,9 @@ begin
 	a_addr <= scan0ptr_reg; -- Don't used the registered signal (block ram address is already registered)
 	b_addr <= scan1ptr_reg;
 	
-	FSMD: process(state, start, firstRow, lastRow, dataR, addr_reg, addr_row_reg, pix_reg
-			,scan0ptr_reg, scan1ptr_reg, sobelA, sobelB, latencyCount_reg, addr_next, col_reg, out_dout)
+	FSMD: process(state, start, firstRow, lastRow, dataR, dataR_reg, addr_reg, addr_row_reg, pix_reg
+			, scan0ptr_reg, scan1ptr_reg, a_dout, b_dout, sobelA, sobelB
+			, latencyCount_reg, addr_next, col_next, col_reg, out_dout, mode_reg)
 	begin
 		mode_next <= mode_reg;
 		a_wr <= '0';
@@ -211,6 +211,7 @@ begin
 		
 		a_din <= dataR;
 		b_din <= dataR;
+		out_addr <= (others => '0');
 		out_din <= byte_t(sobelB(10 downto 3)) & byte_t(sobelA(10 downto 3)); -- Divide by 8.		
 		
 		scan0ptr_next <= scan0ptr_reg;
@@ -222,6 +223,7 @@ begin
 		req <= '1'; -- request memory interface.
 		latencyCount_next <= (others =>'0');
 		dataR_next <= dataR_reg;
+		dataW <= (others => '0');
 		
 		addr_next <= addr_reg;
 		addr_row_next <= addr_row_reg;
@@ -362,9 +364,6 @@ begin
 			addr_row_reg <= addr_row_next;
 			pix_reg <= pix_next;
 			dataR_reg <= dataR_next;
-			
-			a_dout_reg <= a_dout;
-			b_dout_reg <= b_dout;
 		end if;
 	end process registerTransfer;
 	
