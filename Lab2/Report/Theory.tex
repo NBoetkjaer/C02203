@@ -7,6 +7,7 @@ Dynamic range and normalization...
 Border handling...
 
 \section{Accelerator design} 
+\paragraph*{}
 This section describes the design of the accelerator and explain how the pixel data is handled when travelling from external memory to the accelerator and back to external memory. 
 Because each memory transaction involves two pixels (16bit data width). The proposed design of the accelerator, will process two pixels in parallel, this will increase the throughput without increasing the clock rate. At the same time it also simplifies the data handling, since the accelerator does not need to distinguish between which pixel to process (lower byte or upper byte). The drawback of this parallel approach is that the combinatorial logic that performs the Sobel operation, will be twice as big.
 
@@ -39,7 +40,7 @@ Figure \ref{fig:ASM_HW} shows a complete ASMD diagram of the proposed design. Th
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.9 \textwidth]{ASM_HWacc.pdf}
+	\includegraphics[width=1 \textwidth]{ASM_HWacc.pdf}
 	\caption{ASMD chart for the edge detector hardware accelerator}
 	\label{fig:ASM_HW}
 \end{figure}
