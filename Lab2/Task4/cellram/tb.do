@@ -25,6 +25,13 @@
 #
 #########################################################################################
 
+# The vlib command creates the work library
+#rm -rf work
+vlib work
+
+# When the work library is already created the vlib command
+# gives a warning, that is OK.
+
 vlog cellram.v tb.v 
 vsim tb
 add wave -r -p *
