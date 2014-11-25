@@ -261,8 +261,8 @@ begin
 					rw_int <= '0'; -- Set write mode
 				end if;
 				
-			when readData =>
-				if dwait = '1' then
+			when readData =>				
+				if dwait = '1' then					
 					dataR_next <= dataR;
 					col_next <=  col_reg + 1; -- Increment the column counter.
 					if col_reg < to_unsigned(width_step, col_reg'length) then

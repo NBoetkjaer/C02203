@@ -75,6 +75,8 @@ architecture Behavioral of memory_burst is
 	signal rw_reg, rw_next : std_logic;
 	signal addr_reg, addr_next : word_t;
 	signal dataR_int: halfword_t;
+	-- Row border will simulate the 
+	constant rowBoundarySize: natural := 6; -- actual value is 2^(rowBoundarySize + 1)
 	constant mem_latency: natural := 2;
 	signal latencyCount_reg, latencyCount_next : unsigned(1 downto 0);
 	--	signal pause : std_logic;
@@ -114,16 +116,23 @@ begin
 				
 			when initBurst =>
 				latencyCount_next <= latencyCount_reg + 1;
-				if latencyCount_reg =  mem_latency then
-					state_next <= bursting;
+				if latencyCount_reg =  mem_latency then					
+					state_next <= bursting;					
 				end if;
 				
 			when bursting => 
+				dwait <= '1';
 				if rw_reg <= '1' then -- Burst read.
 					dataR <= dataR_int;
 				end if;
 				addr_next <= std_logic_vector(unsigned( addr_reg )+ 1);
-				dwait <= '1';
+				-- Detect when crossing a row boundary. (simulate synchronous behaviour)
+				if addr_reg(rowBoundarySize) /= addr_next(rowBoundarySize) then -- detect when bit value changes.
+					latencyCount_next <= (others => '0');
+					--dwait <= '0';
+					state_next <= initBurst;
+				end if;
+				
 		end case;
 		
 	end process FSM;

@@ -74,6 +74,7 @@ add wave -label out_dout -radix hexadecimal /testbench/Accelerator/out_dout
 add wave -label dataW -radix hexadecimal /testbench/Accelerator/dataW
 
 add wave -label memory/dataR -radix hexadecimal /testbench/memory/dataR
+add wave -label memory/dwait /testbench/memory/dwait
 
 run 20000 ns
 
