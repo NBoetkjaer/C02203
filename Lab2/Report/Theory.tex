@@ -2,9 +2,86 @@
 
 \section{Sobel operator}
 \label{sec:Sobel}
-The Sobel operator can be used to calculate the gradients in the image intensity...
-Dynamic range and normalization...
-Border handling...
+\paragraph*{}
+The Sobel operator can be used to calculate the gradients in the image intensity and thus emphasizes the edges in a given image. The Sobel operator is defined as a $3~x~3$ matrix (equation \ref{eq:sobel_calc}) acting as a filter that is convoluted with the pictures pixels as it is moved along the x and y directions of the image.
+
+\begin{equation}
+\begin{array}{cc}
+Gx = \left[ 
+\begin{array}{ccc}
+	-1 & 0 & 1\\
+    -2 & 0 & 2\\
+    -1 & 0 & 1\\
+\end{array} \right] &
+Gy = \left[ 
+\begin{array}{ccc}
+	1 & 2 & 1\\
+    0 & 0 & 0\\
+    -1 & -2 & -1\\
+\end{array}
+\right]
+\end{array}
+\label{eq:sobel_calc}
+\end{equation}\\
+
+\paragraph*{}
+If a edge detection should be preformed on a $8~x~6$ image as illustrated in figure \ref{fig:pic_matrix} the steps would be to convolute the Sobel matricies $G_x$ and $G_y$ with the image pixels. If calculating the gray area in figure \ref{fig:pic_matrix} the result for green pixel ($A10$) would be given from equations \ref{eq:sobel_calc1} and \ref{eq:sobel_abs}.  
+
+\begin{equation}
+\begin{array}{c}
+G_x = \left[ 
+\begin{array}{ccc}
+	-1\cdot A1 & 0\cdot A2 & 1\cdot A3\\
+    -2\cdot A9 & 0\cdot A10 & 2\cdot A11\\
+    -1\cdot A17 & 0\cdot A18 & 1\cdot A19\\
+\end{array} \right] \\
+\\
+G_y = \left[ 
+\begin{array}{ccc}
+	1\cdot A1 & 2\cdot A2 & 1\cdot A3\\
+    0\cdot A9 & 0\cdot A10 & 0\cdot A11\\
+    -1\cdot A17 & -2\cdot A18 & -2\cdot A19\\
+\end{array}
+\right]
+\end{array}
+\label{eq:sobel_calc1}
+\end{equation}\\
+
+\begin{equation}
+	A10=\vert G_x\vert + \vert G_y\vert
+	\label{eq:sobel_abs}
+\end{equation}
+ 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5 \textwidth]{picture_example.pdf}
+	\caption{Example of sobel matrix calculation}
+	\label{fig:pic_matrix}
+\end{figure}
+
+\subsection{Border conditions}
+\paragraph*{}
+Since the Sobel operator is a $3~x~3$ matrix then performing Sobel operation on a pictures border pixel i problematic since the top/bottom row and left/right columns is outside the picture see figure \ref{fig:pic_matrix_border}. There is a couple of ways to handle this one is to skip calculation of the border which result in a picture of $n-2~x~m-2$ calculated pixels and a untouched border. 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5 \textwidth]{picture_example_border.pdf}
+	\caption{Example of sobel matrix calculation at borders}
+	\label{fig:pic_matrix_border}
+\end{figure}
+
+\paragraph*{}
+A better and quite simple way to deal with the boarder problem is to make an imaginary or fictive border on the picture. This  can be done by coping the border pixels at the moment they are needed for calculation so that the border pixels give an extra border. The principle is illustrated in figure \ref{fig:pic_matrix_exBorder}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5 \textwidth]{picture_example_exBorder.pdf}
+	\caption{Example of sobel matrix calculation at borders}
+	\label{fig:pic_matrix_exBorder}
+\end{figure}  
+
+\subsection{Dynamic range and normalization...}
+\paragraph*{}
 
 \section{Accelerator design} 
 \label{sec:AccDesign}
