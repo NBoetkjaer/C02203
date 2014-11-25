@@ -1,4 +1,5 @@
 \chapter{Theory}
+\label{chap:theory}
 
 \section{Sobel operator}
 \label{sec:Sobel}
@@ -61,7 +62,7 @@ G_y = \left[
 
 \subsection{Border conditions}
 \paragraph*{}
-Since the Sobel operator is a $3~x~3$ matrix then performing Sobel operation on a pictures border pixel i problematic since the top/bottom row and left/right columns is outside the picture see figure \ref{fig:pic_matrix_border}. There is a couple of ways to handle this one is to skip calculation of the border which result in a picture of $n-2~x~m-2$ calculated pixels and a untouched border. 
+Since the Sobel operator is a $3~x~3$ matrix then performing Sobel operation on a pictures border pixel i problematic since the top/bottom row and left/right columns is outside the picture see figure \ref{fig:pic_matrix_border}. There is a couple of ways to handle this. One is to skip calculation of the border which result in a picture of $n-2~x~m-2$ calculated pixels and a untouched border. 
 
 \begin{figure}[H]
 	\centering

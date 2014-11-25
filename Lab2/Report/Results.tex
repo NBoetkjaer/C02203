@@ -1,9 +1,23 @@
 \chapter{Results}
+The Theory chapter \ref{chap:theory} gives a description on how the task of making an image accelerator for edge detection on a gray scale image can be solved. In this chapter test results from implementing the theory on a low budget FPGA \textit{The Xilinx FPGA on the Nexys 3 board} will be presented and discussed.  
 
+\section{Implementation of Sobel operator with extensively extern memory transactions}
+The basic design described in section \ref{sec:AccDesign} have been synthesised simulated and test on the \textit{Nexys board}. The synthesis report seen in figure \ref{fig:sum_synthesis_report}\\
+\\
+To be cont...  
 
+\begin{figure}[H]
+\centering
+\begin{BVerbatim}
+Summary:
+    inferred  31 Adder/Subtractor(s).
+    inferred 232 D-type flip-flop(s).
+    inferred   3 Comparator(s).
+    inferred  59 Multiplexer(s).
+    inferred   1 Finite State Machine(s).
+\end{BVerbatim}
+\caption{Summary of synthesis report ISE project navigator}
+\label{fig:sum_synthesis_report}
+\end{figure}
 
-\section{A}
-put some text
-
-\section{B}
-put some text
+\section{Optimizations using scanline buffers}
