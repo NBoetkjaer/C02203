@@ -91,7 +91,7 @@ This section describes the design of the accelerator and explain how the pixel d
 Because each memory transaction involves two pixels (16bit data width). The proposed design of the accelerator, will process two pixels in parallel, this will increase the throughput without increasing the clock rate. At the same time it also simplifies the data handling, since the accelerator does not need to distinguish between which pixel to process (lower byte or upper byte). The drawback of this parallel approach is that the combinatorial logic that performs the Sobel operation, will be twice as big.
 
 \paragraph*{}
-As seen in the previous section \ref{sec:Sobel}, any given pixel, in the output image of the Sobel operator, is a function of the surrounding eight pixels in the input image. This requires that the accelerator is having access to these surrounding pixels, in order to evaluate the Sobel operator. Instead of reading the entire neighborhood from the external RAM, for every single pixel, an obvious improvement is to use a sliding window technique, and thereby reducing the number of memory transactions. If two pixel are to be processed in parallel, a 3x4 sliding window is required. But since the two convolution kernels stretches over three memory addresses, the width of the sliding window must be increased by one pixel, giving a total of 3x5 pixels. This is visualized in figure \ref{fig:shift_register} (a), which shows the two overlapping convolution kernels \emph{(A and B)} and the three memory location they span. \\
+As seen in the previous section \ref{sec:Sobel}, any given pixel, in the output image of the Sobel operator, is a function of the surrounding eight pixels in the input image. This requires that the accelerator is having access to these surrounding pixels, in order to evaluate the Sobel operator. Instead of reading the entire neighborhood from the external RAM, for every single pixel, an obvious improvement is to use a sliding window technique, and thereby reducing the number of memory transactions. If two pixel are to be processed in parallel, a 3x4 sliding window is required. But since the two convolution kernels stretches over three memory addresses, the width of the sliding window must be increased by one pixel, giving a total of 3x5 pixels. This is visualized in figure \ref{fig:shift_register}(a), which shows the two overlapping convolution kernels \emph{(A and B)} and the three memory location they span. \\
 Figure \ref{fig:shift_register}(b) shows the proposed sliding window and illustrates how incoming pixels are shifted from right to left.
 
 \begin{figure}[H]
@@ -106,7 +106,7 @@ A block diagram showing the internal architecture of the accelerator is seen in 
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=1.0 \textwidth]{Block_diagram.pdf}
+	\includegraphics[width=1.0 \textwidth]{Block_diagram_overview.pdf}
 	\caption{Internal architecture of the accelerator}
 	\label{fig:AccBlockDiagram}
 \end{figure}
@@ -134,7 +134,7 @@ The \emph{writeData} state will increment the current position and current row a
 \subsection*{Removing superfluos reads}
 \label{sec:memaccess}
 \paragraph*{}
-Even though the sliding window technique reduces the required memory transactions, the design presented in section \ref{sec:AccDesign}, still need to read every single pixel three times. This is caused by the fact that each row will need data from the row above and below the current position. Since access to the external memory is the main bottleneck in terms of achieving a high throughput, it is desirable to only read the pixel data once. By employing even more caching of data this is indeed possible. Figure \ref{fig:ScanlineBuffers} shows a caching scheme that will assure that data from three consecutive rows are available and ready to enter the sliding window. The cache operates as a delay-line buffer with one tap and contains two full scanlines. Whenever a pixel is read from the external memory it is pushed into one end of the scanline buffer and the tap and end of the delay line buffer will hold pixel data from the two rows just above the pixel being pushed into  scanline buffer. In practise the scanline buffer is implemented as a ring buffer with two pointers addressing the middle and end position.
+Even though the sliding window technique reduces the required memory transactions, the design presented in section \ref{sec:AccDesign}, still need to read every single pixel three times. This is caused by the fact that each row will need data from the row above and below the current position. Since access to the external memory is the main bottleneck in terms of achieving a high throughput, it is desirable to only read the pixel data once. By employing even more caching of data this is indeed possible. Figure \ref{fig:ScanlineBuffers} shows a caching scheme that will assure that data from three consecutive rows are available and ready to enter the sliding window. The cache operates as a delay-line buffer with one tap and contains two full scanlines. Whenever a pixel is read from the external memory it is pushed into one end of the scanline buffer and the tap and end of the delay line buffer will hold pixel data from the two rows just above the pixel being pushed into  scanline buffer. In practise the scanline buffer is implemented as a ring buffer with two pointers addressing the middle-tap and the end position.
 
 \begin{figure}[H]
 	\centering
@@ -142,16 +142,20 @@ Even though the sliding window technique reduces the required memory transaction
 	\caption{Scanline buffering of pixel data.}
 	\label{fig:ScanlineBuffers}
 \end{figure}
+\paragraph*{}
+
+The scanline buffer can be implemented as either distributed RAM (using LUT's) or via the block RAM, which is present on most modern FPGA's. Block RAM is usually preferred when larger memories are needed, since the distributed RAM requires many FPGA ressources. The Xilinx Spartan6 chip, used in this assignment, has a true dual ported Block RAM, which is capable of both reading and writting to RAM in one single clock cycle.
+\cite{Xilinx:UG383}
 
 \subsection*{Burst mode memory access}
-\label{sec:memaccess}
+\label{sec:burstmode}
 \paragraph*{}
 
 
 \section{HW}
 \label{sec:hw}
 PUT some text\\
-put some cite \cite[p.11~eq.2.6]{Book}, \cite[p.11~eq.2.6]{Note}
+put some cite \cite[p.11~eq.2.6]{chu2006a}, \cite[p.11~eq.2.6]{Sparsoe2014}
 
 \begin{figure}[H]
 	\centering
