@@ -134,7 +134,8 @@ The \emph{writeData} state will increment the current position and current row a
 \subsection*{Removing superfluos reads}
 \label{sec:memaccess}
 \paragraph*{}
-Even though the sliding window technique reduces the required memory transactions, the design presented in section \ref{sec:AccDesign}, still need to read every single pixel three times. This is caused by the fact that each row will need data from the row above and below the current position. Since access to the external memory is the main bottleneck in terms of achieving a high throughput, it is desirable to only read the pixel data once. By employing even more caching of data this is indeed possible. Figure \ref{fig:ScanlineBuffers} shows a caching scheme that will assure that data from three consecutive rows are available and ready to enter the sliding window. The cache operates as a delay-line buffer with one tap and contains two full scanlines. Whenever a pixel is read from the external memory it is pushed into one end of the scanline buffer and the tap and end of the delay line buffer will hold pixel data from the two rows just above the pixel being pushed into  scanline buffer. In practise the scanline buffer is implemented as a ring buffer with two pointers addressing the middle-tap and the end position.
+Even though the sliding window technique reduces the required memory transactions, the design presented in section \ref{sec:AccDesign}, still need to read every single pixel three times. This is caused by the fact that each row will need data from the row above and below the current position. Since access to the external memory is the main bottleneck in terms of achieving a high throughput, it is desirable to only read the pixel data once. By employing even more caching of data this is indeed possible. Figure \ref{fig:ScanlineBuffers} shows a caching scheme that will assure that data from three consecutive rows are available and ready to enter the sliding window. The cache operates as a delay-line buffer with one tap and contains two full scanlines. Whenever a pixel is read from the external memory it is pushed into one end of the scanline buffer and the tap and end of the delay line buffer will hold pixel data from the two rows just above the pixel being pushed into  scanline buffer. In practise the scanline buffer is implemented as a ring buffer with two pointers addressing the middle-tap and the end position. 
+Incoming pixels values will overwrite the end position once it is read.
 
 \begin{figure}[H]
 	\centering
@@ -142,10 +143,10 @@ Even though the sliding window technique reduces the required memory transaction
 	\caption{Scanline buffering of pixel data.}
 	\label{fig:ScanlineBuffers}
 \end{figure}
-\paragraph*{}
 
-The scanline buffer can be implemented as either distributed RAM (using LUT's) or via the block RAM, which is present on most modern FPGA's. Block RAM is usually preferred when larger memories are needed, since the distributed RAM requires many FPGA ressources. The Xilinx Spartan6 chip, used in this assignment, has a true dual ported Block RAM, which is capable of both reading and writting to RAM in one single clock cycle.
-\cite{Xilinx:UG383}
+\paragraph*{}
+The scanline buffer can be implemented as either distributed RAM (using LUT's) or via the block RAM, which is present on most modern FPGA's. Block RAM is usually preferred when larger memories are needed, since the distributed RAM requires more FPGA ressources. The Xilinx Spartan6 chip, used in this assignment, has a true dual ported Block RAM \cite{Xilinx:UG383}, and will be used in the implementation.
+Every time the external RAM is being read, the accelerator must perform two reads and one write transaction to the block RAM. Since only two ports are available, it might seems like more than one clock cycle would be required. But because the block RAM is capable of reading the old value prior to writing the new value to a given memory location, all three transactions can actually be squeezed into one clock cycle. 
 
 \subsection*{Burst mode memory access}
 \label{sec:burstmode}
