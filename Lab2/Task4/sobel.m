@@ -1,4 +1,7 @@
-% Read original image
+% Script for checking that the Sobel generated image is correct.
+clc, clear all, close all
+
+% Read original image 
 pic = imread('pic1.pgm');
 % Read ModelSim generated image.
 result = imread('pic1.pgm16.bits_result.pgm');
