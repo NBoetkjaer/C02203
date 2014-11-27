@@ -113,7 +113,7 @@ A block diagram showing the internal architecture of the accelerator is seen in 
 
 \paragraph*{}
 From the architecture seen in figure \ref{fig:AccBlockDiagram} along with sliding window from figure \ref{fig:shift_register} it is possible to give an initial estimate of the attainable throughput of the accelerator. For each processed pixel pair, the accelerator is required to perform three memory reads and one memory write. Because the memory controller needs to setup the address prior to reading and writing, two extra cycles are to be expected, giving a total of six clock cycles per pixel pair.
-With a clock frequency of 12.5 MHz (maximum when the memory is operated in asynchronous mode) this gives a throughput of approximately 4.1M pixel/sec.
+With a clock frequency of 12.5 MHz (maximum when the memory is operated in asynchronous mode \cite{Micron:CellularRAM}) this gives a throughput of approximately 4.1M pixel/sec.
 \paragraph*{}
 ToDo - Estimating ressource usage ...
 
@@ -146,14 +146,23 @@ Incoming pixels values will overwrite the end position once it is read.
 
 \paragraph*{}
 The scanline buffer can be implemented as either distributed RAM (using LUT's) or via the block RAM, which is present on most modern FPGA's. Block RAM is usually preferred when larger memories are needed, since the distributed RAM requires more FPGA ressources. The Xilinx Spartan6 chip, used in this assignment, has a true dual ported Block RAM \cite{Xilinx:UG383}, and will be used in the implementation.
-Every time the external RAM is being read, the accelerator must perform two reads and one write transaction to the block RAM. Since only two ports are available, it might seems like more than one clock cycle would be required. But because the block RAM is capable of reading the old value prior to writing the new value to a given memory location, all three transactions can actually be squeezed into one clock cycle. 
+Every time the external RAM is being read, the accelerator must perform two reads and one write transaction to the block RAM. Since only two ports are available, it might seems like more than one clock cycle would be required. But because the block RAM is capable of reading the old value prior to writing the new value to a given memory location, all three transactions can be squeezed into one clock cycle.
+With the addition of the scanline buffer, the optimized design is able to process a pixel pair in only two clock cycles - one is used when reading from external RAM and one when writing to the external RAM. This is three times faster, compared to a design that only use the sliding window.
 
 \subsection*{Burst mode memory access}
 \label{sec:burstmode}
 \paragraph*{}
+With the scanline buffer introduced above, each pixel is read extacly once. Hence no further throughput optimizations are possible, without increasing the clock rate. The current clock rate of 12.5MHz is limited by the asynchronous mode, that the external memory is operated under. When operating the RAM in synchronous/burst mode, a clock rate of 80MHz is attainable \cite{Micron:CellularRAM}, more than 6 times faster than the asynchronous mode.
+However, the burst mode imposes a few challenges to the design, such as increased initial latency (3-4 clock cycles) and a more complex control interface. The initial latency will decrease the throughput, since switching between reading and writing bursts will add a delay to the execution. Therefore the throughput will gain by keeping the bursts as long as possible. On the other hand longer bursts requires larger internal buffering of data waiting to be written back to the RAM. Choosing a burst length of one scanline seems like a good compromise between speed and FPGA resources.
 
+\paragraph*{}
+Figure \ref{fig:ASMD_ScanlineBuffers} shows the optimized design, which implements two scanline buffers for the input data. When processing the border pixels, the design is using replication of border pixels as illustrated in figure \ref{fig:pic_matrix_exBorder}. 
+Even though the design does not utilize the burst mode, it is prepared for a burst length of one scanline, by using a scanline buffer for queuing the output data, before writing to external RAM.\\
+The ASMD diagram is reduced to five states (\emph{idle}, \emph{startRow}, \emph{readData}, \emph{writeData}, \emph{doneImg})
 
-\section{HW}
-\label{sec:hw}
-PUT some text\\
-put some cite \cite[p.11~eq.2.6]{chu2006a}, \cite[p.11~eq.2.6]{Sparsoe2014}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9 \textwidth]{ScanlineBuffers_ASM.pdf}
+	\caption{Optimized ASMD diagram with scanline buffering of pixel data.}
+	\label{fig:ASMD_ScanlineBuffers}
+\end{figure}
