@@ -130,7 +130,7 @@ begin
 	firstColumnW	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + 1) else '0';
 	LastColumnW 	<= '1' when addr_reg = std_logic_vector(unsigned(addr_row_reg) + (width_step)) else '0';
 	
-	FSMD: process(state, start, firstRow, lastRow, firstColumnR, firstColumnW, lastColumnW, dataR, addr_reg, addr_read_reg, addr_row_reg, pix_reg, sobelA, sobelB)
+	FSMD: process(state, start, firstRow, lastRow, firstColumnR, firstColumnW, lastColumnW, dataR, dataW_reg, addr_reg, addr_read_reg, addr_row_reg, pix_reg, sobelA, sobelB)
 	begin
 		-- Default values
 		state_next <= state;
