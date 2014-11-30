@@ -114,13 +114,48 @@ A block diagram showing the internal architecture of the accelerator is seen in 
 \paragraph*{}
 From the architecture seen in figure \ref{fig:AccBlockDiagram} along with sliding window from figure \ref{fig:shift_register} it is possible to give an initial estimate of the attainable throughput of the accelerator. For each processed pixel pair, the accelerator is required to perform three memory reads and one memory write. Because the memory controller needs to setup the address prior to reading and writing, two extra cycles are to be expected, giving a total of six clock cycles per pixel pair.
 With a clock frequency of 12.5 MHz (maximum when the memory is operated in asynchronous mode \cite{Micron:CellularRAM}) this gives a throughput of approximately 4.1M pixel/sec.
-\paragraph*{}
-ToDo - Estimating ressource usage ...
 
 \paragraph*{}
 Figure \ref{fig:ASM_HW} shows a complete ASMD diagram of the proposed design, that illustrates the operation of the sliding window and details about the image border handling. The ASMD diagram consist of 9 states (\emph{idle, startRow, readSetup, readCenter, readAbove, readBelow, calculateFilter, writeData and doneImage}).
-In the \emph{idle} state the accelerator is waiting for the start signal to appear. Once the start signal is detected, the state is changed to \emph{startRow}, in which the current address is initialized to the start of the current image row before entering the next state \emph{readSetup}. In the state \emph{readSetup} the reading of the current address is prepared, this state also handles the sliding of the window as well as the special case for the left and right images borders. The state \emph{readCenter} will put the the newly read data into the sliding window and prepare the reading of data located one row above the current position. In case of first row the top image border is handled by reading the current position once more. The state \emph{readAbove} is almost identical to \emph{readCenter}, the difference is that it will prepare the reading of data one row below the current position and that it is handling the bottom image border. The state \emph{calculateFilter} is performing the Sobel operation and moves the result into a register. The \emph{writeData} state will write the content of the result register to the output image. From the \emph{writeData} state it is possible to enter one of three states. 1)\emph{startRow} in case the end of a row is reached. 2)\emph{doneImage} if the entire image has been processed and 3)\emph{readSetup} in the normal case.
+In the \emph{idle} state the accelerator is waiting for the start signal to appear. Once the start signal is detected, the state is changed to \emph{startRow}, in which the current address is initialized to the start of the current image row before entering the next state \emph{readSetup}. In the state \emph{readSetup} the reading of the current address is prepared, this state also handles the sliding of the window as well as the special case for the left and right images borders. 
+The state \emph{readCenter} will put the the newly read data into the sliding window and prepare the reading of data located one row above the current position. In case of first row the top image border is handled by reading the current position once more. The state \emph{readAbove} is almost identical to \emph{readCenter}, the difference is that it will prepare the reading of data one row below the current position and that it is handling the bottom image border.
+The state \emph{calculateFilter} is performing the Sobel operation and moves the result into a register. The \emph{writeData} state will write the content of the result register to the output image. From the \emph{writeData} state it is possible to enter one of three states. 1)\emph{startRow} in case the end of a row is reached. 2)\emph{doneImage} if the entire image has been processed and 3)\emph{readSetup} in the normal case.
 The \emph{writeData} state will increment the current position and current row accordingly. The final state \emph{doneImage} will wait until the start signal is de-asserted before the FSM is returned to the \emph{idle} state.
+
+\paragraph*{}
+Because figure \ref{fig:ASM_HW} shows the complete ASMD diagram it is possible to give a fairly accurate estimation of the registers (D-flip flop) required by the suggested design. With knowledge about the Sobel operator (equation \ref{eq:sobel_calc1} and \ref{eq:sobel_abs} ), it the required adders/subtractors can be estimated as well. 
+The following table
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{lr}
+	\hline
+	\multicolumn{2}{c}{D-flip flops registers} \\ \hline
+	Register						& \# \\ \hline
+	State (9 states)				& 4 \\
+	3x5 pixel sliding window		& 120 \\
+	Sobel result (pixel pair)		& 16 \\
+	3 address registers (32 bit)	& 96 \\ \hline
+	Total							& 232 \\ \hline
+	\end{tabular}
+	\caption{Estimated number of registers.}
+	\label{tab:designRegisters}
+\end{table}
+
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{lr}
+	\hline
+	\multicolumn{2}{c}{Adders/subtractors} \\ \hline
+	Function						& \# \\ \hline
+	Address logic (32 bits)			& 6 \\
+	Sobel filter (pixel pair, 9- 11 bits)		& 22 \\  \hline
+	\end{tabular}
+	\caption{Estimated number of Adders and subtractors.}
+	\label{tab:designRegisters}
+\end{table}
+ToDo - Estimating ressource usage ...
 
 \begin{figure}[H]
 	\centering
