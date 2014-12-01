@@ -4,7 +4,8 @@
 \section{Sobel operator}
 \label{sec:Sobel}
 \paragraph*{}
-The Sobel operator can be used to calculate the gradients in the image intensity and thus emphasizes the edges in a given image. The Sobel operator is defined as a $3~x~3$ matrix (equation \ref{eq:sobel_calc}) acting as a filter that is convoluted with the pictures pixels as it is moved along the x and y directions of the image.
+The Sobel operator is used to calculate the magnitude of the image intensity gradient and thus emphasizes the edges in a given image. It is using two $3~x~3$ kernels (equation \ref{eq:sobel_calc}) to determine the horizontal and vertical gradients, and the sobel output is simply the magnitude of the gradient vector.
+Normally, the Euclidean distance is used to calculate the magnitude but in this assignment we will be using the Manhattan distance as an approximation \ref{eq:sobel_abs}.
 
 \begin{equation}
 \begin{array}{cc}
@@ -26,7 +27,7 @@ Gy = \left[
 \end{equation}\\
 
 \paragraph*{}
-If a edge detection should be preformed on a $8~x~6$ image as illustrated in figure \ref{fig:pic_matrix} the steps would be to convolute the Sobel matricies $G_x$ and $G_y$ with the image pixels. If calculating the gray area in figure \ref{fig:pic_matrix} the result for green pixel ($A10$) would be given from equations \ref{eq:sobel_calc1} and \ref{eq:sobel_abs}.  
+If a Sobel edge detection is preformed on a $8~x~6$ image as illustrated in figure \ref{fig:pic_matrix} the steps would be to convolute the Sobel matricies $G_x$ and $G_y$ with the image pixels. If calculating the gray area in figure \ref{fig:pic_matrix} the result for green pixel ($A10$) would be given from equations \ref{eq:sobel_calc1} and \ref{eq:sobel_abs}.  
 
 \begin{equation}
 \begin{array}{c}
@@ -62,7 +63,7 @@ G_y = \left[
 
 \subsection{Border conditions}
 \paragraph*{}
-Since the Sobel operator is a $3~x~3$ matrix then performing Sobel operation on a pictures border pixel i problematic since the top/bottom row and left/right columns is outside the picture see figure \ref{fig:pic_matrix_border}. There is a couple of ways to handle this. One is to skip calculation of the border which result in a picture of $n-2~x~m-2$ calculated pixels and a untouched border. 
+Since the Sobel operator is using a $3~x~3$ neighborhood of pixels, the processing of the image border pixels is problematic, due to the kernel being partly outside the image. Which is illustrated in figure \ref{fig:pic_matrix_border}. There is a couple of ways to handle this. One is to avoid calculation of the borders, which result in a picture of $n-2~x~m-2$ calculated pixels and a untouched border. 
 
 \begin{figure}[H]
 	\centering
@@ -72,7 +73,7 @@ Since the Sobel operator is a $3~x~3$ matrix then performing Sobel operation on 
 \end{figure}
 
 \paragraph*{}
-A better and quite simple way to deal with the boarder problem is to make an imaginary or fictive border on the picture. This  can be done by coping the border pixels at the moment they are needed for calculation so that the border pixels give an extra border. The principle is illustrated in figure \ref{fig:pic_matrix_exBorder}.
+A better and quite simple way to deal with the border problem is to make an imaginary or fictive border on the picture. This  can be done by coping the border pixels at the moment they are needed for calculation so that the border pixels give an extra border. The principle is illustrated in figure \ref{fig:pic_matrix_exBorder}.
 
 \begin{figure}[H]
 	\centering
@@ -123,9 +124,7 @@ The state \emph{calculateFilter} is performing the Sobel operation and moves the
 The \emph{writeData} state will increment the current position and current row accordingly. The final state \emph{doneImage} will wait until the start signal is de-asserted before the FSM is returned to the \emph{idle} state.
 
 \paragraph*{}
-Because figure \ref{fig:ASM_HW} shows the complete ASMD diagram it is possible to give a fairly accurate estimation of the registers (D-flip flop) required by the suggested design. With knowledge about the Sobel operator (equation \ref{eq:sobel_calc1} and \ref{eq:sobel_abs} ), it the required adders/subtractors can be estimated as well. 
-The following table
-
+Because figure \ref{fig:ASM_HW} shows a comprehensive ASMD diagram it is possible to give a fairly accurate estimate of the registers (D-flip flop) required by the suggested design, the estimate is given in table \ref{tab:designRegisters}. 
 \begin{table}[h]
 	\centering
 	\begin{tabular}{lr}
@@ -142,24 +141,27 @@ The following table
 	\label{tab:designRegisters}
 \end{table}
 
-
+\paragraph*{}
+With knowledge about the arithmetic of the Sobel operator (equation \ref{eq:sobel_calc1} and \ref{eq:sobel_abs} ), the required adders/subtractors can be estimated as well.
+Table \ref{tab:designAdders} gives an overview of the arithmetic complexity of the accelerator design. The 7 adders stated under 'Address logic', is slightly more than the 4 adders that is directly observed from the ASMD diagram.
+The 3 extra adder stems from the signals \emph{firstColumnW} and \emph{lastColoumnW}, and the calculation of the output address, which is a constant offset from the current address \emph{addr\_reg}.
+ 
 \begin{table}[h]
 	\centering
 	\begin{tabular}{lr}
 	\hline
 	\multicolumn{2}{c}{Adders/subtractors} \\ \hline
 	Function						& \# \\ \hline
-	Address logic (32 bits)			& 6 \\
+	Address logic (32 bits)			& 7 \\
 	Sobel filter (pixel pair, 9- 11 bits)		& 22 \\  \hline
 	\end{tabular}
 	\caption{Estimated number of Adders and subtractors.}
-	\label{tab:designRegisters}
+	\label{tab:designAdders}
 \end{table}
-ToDo - Estimating ressource usage ...
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=1 \textwidth]{ASM_HWacc.pdf}
+	\includegraphics[width=0.95 \textwidth]{ASM_HWacc.pdf}
 	\caption{ASMD chart for the edge detector hardware accelerator}
 	\label{fig:ASM_HW}
 \end{figure}
@@ -182,7 +184,7 @@ Incoming pixels values will overwrite the end position once it is read.
 \paragraph*{}
 The scanline buffer can be implemented as either distributed RAM (using LUT's) or via the block RAM, which is present on most modern FPGA's. Block RAM is usually preferred when larger memories are needed, since the distributed RAM requires more FPGA ressources. The Xilinx Spartan6 chip, used in this assignment, has a true dual ported Block RAM \cite{Xilinx:UG383}, and will be used in the implementation.
 Every time the external RAM is being read, the accelerator must perform two reads and one write transaction to the block RAM. Since only two ports are available, it might seems like more than one clock cycle would be required. But because the block RAM is capable of reading the old value prior to writing the new value to a given memory location, all three transactions can be squeezed into one clock cycle.
-With the addition of the scanline buffer, the optimized design is able to process a pixel pair in only two clock cycles - one is used when reading from external RAM and one when writing to the external RAM. This is three times faster, compared to a design that only use the sliding window.
+With the addition of the scanline buffer, the optimized design is able to process a pixel pair in only two clock cycles - one is used when reading from external RAM and one when writing to the external RAM. This is three times faster, compared to a design that only use the sliding window (12.3M pixel/sec @ 12.5 MHz clock frequency)
 
 \subsection*{Burst mode memory access}
 \label{sec:burstmode}
@@ -193,11 +195,12 @@ However, the burst mode imposes a few challenges to the design, such as increase
 \paragraph*{}
 Figure \ref{fig:ASMD_ScanlineBuffers} shows the optimized design, which implements two scanline buffers for the input data. When processing the border pixels, the design is using replication of border pixels as illustrated in figure \ref{fig:pic_matrix_exBorder}. 
 Even though the design does not utilize the burst mode, it is prepared for a burst length of one scanline, by using a scanline buffer for queuing the output data, before writing to external RAM.\\
-The ASMD diagram is reduced to five states (\emph{idle}, \emph{startRow}, \emph{readData}, \emph{writeData}, \emph{doneImg})
+The ASMD diagram is reduced to only five states (\emph{idle}, \emph{startRow}, \emph{readData}, \emph{writeData}, \emph{doneImg}). 
+The accelerator will toggle between reading and writing a full scanline. While reading a scanline from external RAM and calculating the filter result, the accelerator will stay in the state \emph{readData}. While writing the resulting scanline back to external RAM the accelerator is kept in the state \emph{writeData}.
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.9 \textwidth]{ScanlineBuffers_ASM.pdf}
+	\includegraphics[width=1.0 \textwidth]{ScanlineBuffers_ASM.pdf}
 	\caption{Optimized ASMD diagram with scanline buffering of pixel data.}
 	\label{fig:ASMD_ScanlineBuffers}
 \end{figure}
