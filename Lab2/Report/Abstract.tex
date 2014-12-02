@@ -1,1 +1,6 @@
 \chapter*{Abstract}
+Within this  report, two synthesizable VHDL implementations of the Sobel image operator, are presented. The implementations assumes that an image is located in external memory and that the resulting image is written back to the same external memory.
+The memory is accessed in a sequential manner, and does not permit, read and write operations to overlap.
+The implementations represents two different optimization strategies. One design is optimized for throughput alone, whereas the other is using considerable less resources at the cost of reduced throughput.
+In all other aspects the two implementations are similar, and will generate the exact same result, with border replication applied along the image borders, to minimize artefacts on the edge of the image.
+Correct operation of the digital designs are verified in both a simulation environment and on a FPGA realization.
