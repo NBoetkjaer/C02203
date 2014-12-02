@@ -4,18 +4,18 @@
 \section{Sobel operator}
 \label{sec:Sobel}
 \paragraph*{}
-The Sobel operator is used to calculate the magnitude of the image intensity gradient and thus emphasizes the edges in a given image. It is using two $3~x~3$ kernels (equation \ref{eq:sobel_calc}) to determine the horizontal and vertical gradients, and the sobel output is simply the magnitude of the gradient vector.
-Normally, the Euclidean distance is used to calculate the magnitude but in this assignment we will be using the Manhattan distance as an approximation \ref{eq:sobel_abs}.
+The Sobel operator is used to calculate the magnitude of the image intensity gradient and thus emphasizes the edges in a given image. It is using two $3~x~3$ kernels (equation \ref{eq:sobel_calc}) to determine the horizontal and vertical gradients, and the Sobel output is simply the magnitude of the gradient vector.
+Normally, the Euclidean distance is used to calculate the magnitude but in this assignment, the Manhattan distance will be used  as an approximation (equation \ref{eq:sobel_abs}).
 
 \begin{equation}
 \begin{array}{cc}
-Gx = \left[ 
+G_x = \left[ 
 \begin{array}{ccc}
 	-1 & 0 & 1\\
     -2 & 0 & 2\\
     -1 & 0 & 1\\
-\end{array} \right] &
-Gy = \left[ 
+\end{array} \right],  &
+G_y = \left[ 
 \begin{array}{ccc}
 	1 & 2 & 1\\
     0 & 0 & 0\\
@@ -26,34 +26,33 @@ Gy = \left[
 \label{eq:sobel_calc}
 \end{equation}\\
 
-\paragraph*{}
-If a Sobel edge detection is preformed on a $8~x~6$ image as illustrated in figure \ref{fig:pic_matrix} the steps would be to convolute the Sobel matricies $G_x$ and $G_y$ with the image pixels. If calculating the gray area in figure \ref{fig:pic_matrix} the result for green pixel ($A10$) would be given from equations \ref{eq:sobel_calc1} and \ref{eq:sobel_abs}.  
-
 \begin{equation}
-\begin{array}{c}
-G_x = \left[ 
-\begin{array}{ccc}
-	-1\cdot A1 & 0\cdot A2 & 1\cdot A3\\
-    -2\cdot A9 & 0\cdot A10 & 2\cdot A11\\
-    -1\cdot A17 & 0\cdot A18 & 1\cdot A19\\
-\end{array} \right] \\
-\\
-G_y = \left[ 
-\begin{array}{ccc}
-	1\cdot A1 & 2\cdot A2 & 1\cdot A3\\
-    0\cdot A9 & 0\cdot A10 & 0\cdot A11\\
-    -1\cdot A17 & -2\cdot A18 & -2\cdot A19\\
-\end{array}
-\right]
-\end{array}
-\label{eq:sobel_calc1}
-\end{equation}\\
-
-\begin{equation}
-	A10=\vert G_x\vert + \vert G_y\vert
+	Sobel = \vert G_x\vert + \vert G_y\vert
 	\label{eq:sobel_abs}
 \end{equation}
- 
+
+\paragraph*{}
+If the Sobel edge detection is performed on an $8~x~6$ image as illustrated in figure \ref{fig:pic_matrix}. 
+The calculation of the gradients $G_x$ and $G_y$ on the location marked by the green pixel ($A10$) is given by equation \ref{eq:sobel_Gx} and \ref{eq:sobel_Gy}.
+
+\begin{equation}
+\begin{split}
+	G_x = \quad &(-1\cdot A1 ) + (0\cdot A2) + (1\cdot A3) + \\
+		  &(-2\cdot A9 ) + (0\cdot A10) + (2\cdot A11)	+  \\
+		  &(-1\cdot A17) + (0\cdot A18) + (1\cdot A19)
+\end{split}
+\label{eq:sobel_Gx}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+	G_y = \quad & (1\cdot A1) + (2\cdot A2) + (1\cdot A3) + \\
+		 &  (0\cdot A9) + (0\cdot A10) + (0\cdot A11)	+  \\
+		 &  (-1\cdot A17) + (-2\cdot A18) + (-1\cdot A19)
+\end{split}
+\label{eq:sobel_Gy}
+\end{equation}
+
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.5 \textwidth]{picture_example.pdf}
@@ -63,7 +62,8 @@ G_y = \left[
 
 \subsection{Border conditions}
 \paragraph*{}
-Since the Sobel operator is using a $3~x~3$ neighborhood of pixels, the processing of the image border pixels is problematic, due to the kernel being partly outside the image. Which is illustrated in figure \ref{fig:pic_matrix_border}. There is a couple of ways to handle this. One is to avoid calculation of the borders, which result in a picture of $n-2~x~m-2$ calculated pixels and a untouched border. 
+Since the Sobel operator is using a $3~x~3$ neighborhood of pixels. The processing of the image border pixels is problematic, due to the kernel being partly outside of the image. This is illustrated in figure \ref{fig:pic_matrix_border}.
+There are a couple of ways to handle this border condition. One is to avoid calculation of the borders, which result in an output image that is two pixels smaller in both horizontal and vertical direction.
 
 \begin{figure}[H]
 	\centering
@@ -73,7 +73,7 @@ Since the Sobel operator is using a $3~x~3$ neighborhood of pixels, the processi
 \end{figure}
 
 \paragraph*{}
-A better and quite simple way to deal with the border problem is to make an imaginary or fictive border on the picture. This  can be done by coping the border pixels at the moment they are needed for calculation so that the border pixels give an extra border. The principle is illustrated in figure \ref{fig:pic_matrix_exBorder}.
+A better and quite simple way to deal with the border problem is to make an imaginary or fictive border on the image. This can be done by replicating the border pixels, and use these replicated pixels to fill the kernel part that is outside of the image. This principle is illustrated in figure \ref{fig:pic_matrix_exBorder}.
 
 \begin{figure}[H]
 	\centering
@@ -82,8 +82,27 @@ A better and quite simple way to deal with the border problem is to make an imag
 	\label{fig:pic_matrix_exBorder}
 \end{figure}  
 
-\subsection{Dynamic range and normalization...}
+\subsection{Dynamic range and normalization.}
 \paragraph*{}
+When calculating the Sobel operator, the dynamic range of the gradients $G_x$ and $G_y$, can exceed that of the input image.
+For an 8-bit monochrome image, the dynamic range is [0:255], but by looking at equation \ref{eq:sobel_calc} it is clear that the  dynamic range the gradients are eight times larger [-4 $\cdot$ 255: 4 $\cdot$ 255]=[-1020: 1020]. Therefore it is required that the internal number representation, used when calculating the gradients, is sufficiently large.
+For an 8-bit input image an 11 bit signed number is required. \\
+The dynamic range of the Manhattan distance (equation \ref{eq:sobel_abs}) is found to be [0: 6 $\cdot$ 255] = [0:1530], which requires an 11-bit unsigned number. This range represents the highest possible gradient magnitude as illustrated by figure \ref{fig:sobel_MaxRange}.
+
+\begin{figure}[H]
+\centering
+$\left[ 
+\begin{array}{ccc}
+	0 & 255 & 255\\
+    0 & 0 & 255\\
+    0 & 0 & 0\\
+\end{array} \right]$
+\caption{Example of maximum magnitude of gradient vector}
+\label{fig:sobel_MaxRange}
+\end{figure}
+
+Since the output image is requested to be an 8-bit image, the dynamic range should be remapped from 11-bit downto 8-bit. This remapping can be done by either limiting or normalizing to the new range. In the implementations presented in this report, a normalization factor of eight is used, giving a dynamic range of [0: 191] for the Sobel output image. 
+
 
 \section{Accelerator design} 
 \label{sec:AccDesign}
@@ -142,7 +161,7 @@ Because figure \ref{fig:ASM_HW} shows a comprehensive ASMD diagram it is possibl
 \end{table}
 
 \paragraph*{}
-With knowledge about the arithmetic of the Sobel operator (equation \ref{eq:sobel_calc1} and \ref{eq:sobel_abs} ), the required adders/subtractors can be estimated as well.
+With knowledge about the arithmetic of the Sobel operator (equation \ref{eq:sobel_calc} and \ref{eq:sobel_abs} ), the required adders/subtractors can be estimated as well.
 Table \ref{tab:designAdders} gives an overview of the arithmetic complexity of the accelerator design. The 7 adders stated under 'Address logic', is slightly more than the 4 adders that is directly observed from the ASMD diagram.
 The 3 extra adder stems from the signals \emph{firstColumnW} and \emph{lastColoumnW}, and the calculation of the output address, which is a constant offset from the current address \emph{addr\_reg}.
  
