@@ -1,32 +1,29 @@
-\chapter*{Appendix}
-\addcontentsline{toc}{chapter}{Appendix}
+\appendix
+\renewcommand{\thesection}{\Alph{section}}
+\section{Appendices}
+%\addcontentsline{toc}{chapter}{Appendices}
 
-%\chapter{gcd.vhdl}
-\newpage
-\chapter*{A1	acc2.vhd}
-\label{app:acc2}
-\addcontentsline{toc}{chapter}{A1	acc2.vhd}			
+\subsection{Appendix: acc2.vhd}
+\label{app:acc2}		
 \lstinputlisting{../task2/acc2.vhd}
 
 \newpage
-\chapter*{A2	accScanline.vhd}
-\label{app:accScanline}
-\addcontentsline{toc}{chapter}{A2	accScanline.vhd}			
+\subsection{Appendix: accScanline.vhd}
+\label{app:accScanline}		
 \lstinputlisting{../task4/accScanline.vhd}
 
 \newpage
-\chapter*{A3	bram\_tdp.vhd}
-\addcontentsline{toc}{chapter}{A3	bram\textunderscore tdp.vhd}
+\subsection{Appendix: bram\_tdp.vhd}
+\label{app:bram}	
 \lstinputlisting{../task4/bram_tdp.vhd}
 
 \newpage
-\chapter*{A4	acc2 block diagram.vhd}
-\addcontentsline{toc}{chapter}{A4 block diagram.vhd}	
+\subsection{Appendix: acc2 block diagram.vhd}
+\label{app:accBlockDiagram}
 \includepdf[pages={1}]{Block_diagram.pdf}
 
 \newpage
-\chapter*{A5	MATLAB verification script}
+\subsection{Appendix: MATLAB verification script}
 \label{app:Matlab}
-\addcontentsline{toc}{chapter}{A5	MATLAB verification script}
 \lstset{language=Matlab} 
 \lstinputlisting{../task2/sobel.m}
