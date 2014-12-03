@@ -4,7 +4,7 @@
 \section{Sobel operator}
 \label{sec:Sobel}
 \paragraph*{}
-The Sobel operator is used to calculate the magnitude of the image intensity gradient and thus emphasizes the edges in a given image. It is using two $3~x~3$ kernels (equation \ref{eq:sobel_calc}) to determine the horizontal and vertical gradients, and the Sobel output is simply the magnitude of the gradient vector.
+The Sobel operator is used to calculate the magnitude of the image intensity gradient and thus emphasizes the edges in a given image. It is using two $3~x~3$ kernels (equation \ref{eq:sobel_calc}) to determine the horizontal ($G_x$) and vertical ($G_y$) gradients, and the Sobel output is simply the magnitude of the gradient vector.
 Normally, the Euclidean distance is used to calculate the magnitude but in this assignment, the Manhattan distance will be used  as an approximation (equation \ref{eq:sobel_abs}).
 
 \begin{equation}
@@ -191,7 +191,7 @@ The 3 extra adder stems from the signals \emph{firstColumnW} and \emph{lastColou
 \label{sec:memaccess}
 \paragraph*{}
 Even though the sliding window technique reduces the required memory transactions, the design presented in section \ref{sec:AccDesign}, still need to read every single pixel three times. This is caused by the fact that each row will need data from the row above and below the current position. Since access to the external memory is the main bottleneck in terms of achieving a high throughput, it is desirable to only read the pixel data once. By employing even more caching of data this is indeed possible. Figure \ref{fig:ScanlineBuffers} shows a caching scheme that will assure that data from three consecutive rows are available and ready to enter the sliding window. The cache operates as a delay-line buffer with one tap and contains two full scanlines. Whenever a pixel is read from the external memory it is pushed into one end of the scanline buffer and the tap and end of the delay line buffer will hold pixel data from the two rows just above the pixel being pushed into  scanline buffer. In practise the scanline buffer is implemented as a ring buffer with two pointers addressing the middle-tap and the end position. 
-Incoming pixels values will overwrite the end position once it is read.
+Incoming pixel values will overwrite the end position once it is read.
 
 \begin{figure}[H]
 	\centering
