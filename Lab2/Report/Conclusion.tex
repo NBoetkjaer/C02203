@@ -1,3 +1,11 @@
 \chapter{Conclusion}
-put some text\\
-And some more text\\ and some more text
+\paragraph*{ }
+The exercise in this project was to design and implement a hard ware edge detector on a FPGA using VHDL. The edge detector project have been solved using the commonly used design tools and strategies such as ASMD designs, block diagrams etc. A strategy of develop a basic design which is revisited and optimize was the concept followed through the project.
+\paragraph*{ }
+With a refreshed knowledge of algorithms for edge detection in mind a basic edge detector with border handling have been developed and given fair and expected result although a frame rate of $40$ \textit{frames pr. second} is bit slow considered the image resolution.
+\paragraph*{ }
+Two optimizations stategies was followed in order to improve performance. At first a scanline buffer have been implemented with use of the block ram in the FPGA. The scanline buffer was a good improvement considering it tripled the edge detection calculation to $120$ \textit{frames pr. second}. \\
+\\
+\textcolor{red}{To do: finish optimization with burst mode expectations}  
+
+\newpage
