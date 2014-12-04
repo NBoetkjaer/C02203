@@ -53,6 +53,9 @@ add wave -label firstColumnR /testbench/Accelerator/firstColumnR
 add wave -label firstColumnW /testbench/Accelerator/firstColumnW
 add wave -label lastColumnW /testbench/Accelerator/lastColumnW
 
+add wave -label pix_reg /testbench/Accelerator/pix_reg
+add wave -label dataR /testbench/Accelerator/dataR
+add wave -label dataW /testbench/Accelerator/dataW
 
 run 2000 ns
 
