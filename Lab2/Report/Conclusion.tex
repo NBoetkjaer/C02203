@@ -1,11 +1,11 @@
 \chapter{Conclusion}
 \paragraph*{ }
-The exercise in this project was to design and implement a hard ware edge detector on a FPGA using VHDL. The edge detector project have been solved using the commonly used design tools and strategies such as ASMD designs, block diagrams etc. A strategy of develop a basic design which is revisited and optimize was the concept followed through the project.
+The scope of this project was to design and implement a hardware accelerator for the use of edge detection on a FPGA using VHDL. The edge detector project have been solved using the commonly used design tools and strategies such as ASMD designs, block diagrams etc. A strategy of developing a basic design which is revisited and optimize was the approach that have been followed through this project.
 \paragraph*{ }
-With a refreshed knowledge of algorithms for edge detection in mind a basic edge detector with border handling have been developed and given fair and expected result although a frame rate of $40$ \textit{frames pr. second} is bit slow considered the image resolution.
+With a refreshed knowledge of algorithms for edge detection in mind a basic edge detector with border handling have been developed, implemented and tested to give a fair and expected result. Although a frame rate of $40$ \textit{frames pr. second} is bit slow considered the image resolution of the test image is relative small the basic design was successfully carried out.
 \paragraph*{ }
-Two optimizations stategies was followed in order to improve performance. At first a scanline buffer have been implemented with use of the block ram in the FPGA. The scanline buffer was a good improvement considering it tripled the edge detection calculation to $120$ \textit{frames pr. second}. \\
-\\
-\textcolor{red}{To do: finish optimization with burst mode expectations}  
+Two optimizations ideas was to be implemented in order to improve performance. Full implementation was only possible for the first one due to lack of time. At first a scanline buffer have been implemented with use of the block ram in the FPGA. The scanline buffer was a good improvement considering it tripled the edge detection calculation to $120$ \textit{frames pr. second} due to a reduction of read transaction with the extern ram. Finally for the second implementation the extern ram was supposed to operate in burst mode of which the clock frequency could be increased to $80Mhz$ giving a $26.6Mpix$ calculation rate or $262$ \textit{frames pr. second}. Doing the project a simulation of burst mode optimization was carried out but the processed image had some errors and within the given time frame the design could not be implemented correctly.
+\paragraph*{ }
+ Overall the project have showed that a edge detection accelerator can indeed be implemented on FPGA how ever with the available hardware in this project it would not be possible to use it for real time calculation on a HD video stream. Since that would require the extern ram to run at $156Mhz$ giving $25.07$ \textit{frames pr. second} for a Full HD resolution.
 
 \newpage
