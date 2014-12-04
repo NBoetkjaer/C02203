@@ -75,11 +75,10 @@ architecture Behavioral of memory_burst is
 	signal rw_reg, rw_next : std_logic;
 	signal addr_reg, addr_next : word_t;
 	signal dataR_int: halfword_t;
-	-- Row border will simulate the 
-	constant rowBoundarySize: natural := 6; -- actual value is 2^(rowBoundarySize + 1)
+	-- rowBoundarySize is used for simulating the delay, caused by row boundary crossing.
+	constant rowBoundarySize: natural := 7; -- actual value is 2^(rowBoundarySize)
 	constant mem_latency: natural := 2;
 	signal latencyCount_reg, latencyCount_next : unsigned(1 downto 0);
-	--	signal pause : std_logic;
 begin
 	
 	Memory : memory2
