@@ -85,9 +85,9 @@ A better and quite simple way to deal with the border problem is to make an imag
 \subsection{Dynamic range and normalization.}
 \paragraph*{}
 When calculating the Sobel operator, the dynamic range of the gradients $G_x$ and $G_y$, can exceed that of the input image.
-For an 8-bit monochrome image, the dynamic range is [0:255], but by looking at equation \ref{eq:sobel_calc} it is clear that the  dynamic range the gradients are eight times larger [-4 $\cdot$ 255: 4 $\cdot$ 255]=[-1020: 1020]. Therefore it is required that the internal number representation, used when calculating the gradients, is sufficiently large.
+For an 8-bit monochrome image, the dynamic range is [0:255], but by looking at equation \ref{eq:sobel_calc} it is clear that the  dynamic range of the gradients are eight times larger [-4 $\cdot$ 255: 4 $\cdot$ 255]=[-1020: 1020]. Therefore it is required that the internal number representation, used when calculating the gradients, is sufficiently large.
 For an 8-bit input image an 11 bit signed number is required. \\
-The dynamic range of the Manhattan distance (equation \ref{eq:sobel_abs}) is found to be [0: 6 $\cdot$ 255] = [0:1530], which requires an 11-bit unsigned number. This range represents the highest possible gradient magnitude as illustrated by figure \ref{fig:sobel_MaxRange}.
+The dynamic range of the Manhattan distance of the gradients (equation \ref{eq:sobel_abs}) is found to be [0: 6 $\cdot$ 255] = [0:1530], which requires an 11-bit unsigned number. This range represents the highest possible gradient magnitude as illustrated by figure \ref{fig:sobel_MaxRange}.
 
 \begin{figure}[H]
 \centering
@@ -101,7 +101,7 @@ $\left[
 \label{fig:sobel_MaxRange}
 \end{figure}
 
-Since the output image is requested to be an 8-bit image, the dynamic range should be remapped from 11-bit downto 8-bit. This remapping can be done by either limiting or normalizing to the new range. In the implementations presented in this report, a normalization factor of eight is used, giving a dynamic range of [0: 191] for the Sobel output image. 
+Since the output image is requested to be an 8-bit image, the dynamic range should be remapped from 11-bit downto 8-bit. This remapping can be done by either limiting or normalizing to the new range. In the implementations presented in this report, a normalization factor of eight is used, giving a dynamic range of [0: 191] for the Sobel output image.
 
 
 \section{Accelerator design} 
@@ -132,13 +132,13 @@ A block diagram showing the internal architecture of the accelerator is seen in 
 \end{figure}
 
 \paragraph*{}
-From the architecture seen in figure \ref{fig:AccBlockDiagram} along with sliding window from figure \ref{fig:shift_register} it is possible to give an initial estimate of the attainable throughput of the accelerator. For each processed pixel pair, the accelerator is required to perform three memory reads and one memory write. Because the memory controller needs to setup the address prior to reading and writing, two extra cycles are to be expected, giving a total of six clock cycles per pixel pair.
+From the architecture seen in figure \ref{fig:AccBlockDiagram} along with sliding window from figure \ref{fig:shift_register} it is possible to give an initial estimate of the attainable throughput of the accelerator. For each processed pixel pair, the accelerator is required to perform three memory reads and one memory write. Because the memory controller needs to setup the address prior to reading and writing, two extra clock cycles are to be expected, giving a total of six clock cycles per pixel pair.
 With a clock frequency of 12.5 MHz (maximum when the memory is operated in asynchronous mode \cite{Micron:CellularRAM}) this gives a throughput of approximately 4.1M pixel/sec.
 
 \paragraph*{}
 Figure \ref{fig:ASM_HW} shows a complete ASMD diagram of the proposed design, that illustrates the operation of the sliding window and details about the image border handling. The ASMD diagram consist of 9 states (\emph{idle, startRow, readSetup, readCenter, readAbove, readBelow, calculateFilter, writeData and doneImage}).
 In the \emph{idle} state the accelerator is waiting for the start signal to appear. Once the start signal is detected, the state is changed to \emph{startRow}, in which the current address is initialized to the start of the current image row before entering the next state \emph{readSetup}. In the state \emph{readSetup} the reading of the current address is prepared, this state also handles the sliding of the window as well as the special case for the left and right images borders. 
-The state \emph{readCenter} will put the the newly read data into the sliding window and prepare the reading of data located one row above the current position. In case of first row the top image border is handled by reading the current position once more. The state \emph{readAbove} is almost identical to \emph{readCenter}, the difference is that it will prepare the reading of data one row below the current position and that it is handling the bottom image border.
+The state \emph{readCenter} will put the the newly read data into the sliding window and prepare the reading of data located one row above the current position. In case it is the first row the top image border is handled by reading the current position once again. The state \emph{readAbove} is almost identical to \emph{readCenter}, the difference is that it will prepare the reading of data one row below the current position and that it is handling the bottom image border.
 The state \emph{calculateFilter} is performing the Sobel operation and moves the result into a register. The \emph{writeData} state will write the content of the result register to the output image. From the \emph{writeData} state it is possible to enter one of three states. 1)\emph{startRow} in case the end of a row is reached. 2)\emph{doneImage} if the entire image has been processed and 3)\emph{readSetup} in the normal case.
 The \emph{writeData} state will increment the current position and current row accordingly. The final state \emph{doneImage} will wait until the start signal is de-asserted before the FSM is returned to the \emph{idle} state.
 
