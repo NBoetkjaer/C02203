@@ -73,7 +73,7 @@ The simulation is completed in $24.4ms$ which results in a throughput of $40.9$ 
 
 \section{Optimization with scanline buffers}
 \paragraph*{}
-In section \ref{sec:Optimization} a design using scanline buffering was described. This scanline based design has been implemented and synthesized, the results from the simulations and hardware tests have passed the verified script. The VHDL implementation is found in appendix \ref{app:accScanline}. \\
+In section \ref{sec:Optimization} a design using scanline buffering was described. This scanline based design has been implemented and synthesized, the results from the simulations and hardware tests have passed the verification script. The VHDL implementation is found in appendix \ref{app:accScanline}. \\
 Because this design is using the same circuits for the Sobel calculation and the sliding window, the synthesis report gives roughly the same amount of logic components, See figure \ref{fig:sum_synthesis_report_scan}.
 In the synthesis report it is also possible to locate the two dual port block RAM components that is used to form the three scanline buffers. Figure \ref{fig:sum_synthesis_report_ram} list the two inferred block RAMs components. The VHDL implementation of the block RAM can be found in appendix \ref{app:bram}.
     
@@ -140,10 +140,9 @@ Design statistics:
 \label{fig:sum_ScanPostPAR_report}
 \end{figure}
 
-\textcolor{red}{ This is how far I got thursday night ... will continue in the morning ;-)}
-
 \paragraph*{}
-The simulation of the design shows the scanline design is a improvement with only one read transaction per pixel as describe in section \ref{sec:Optimization}. This is proven by the fact the simulation complets after $8.29ms$ which roughly is 3 times faster then the basic design and gives a calculation rate of $120$ \textit{frames pr second} or $12.2Mpix/sec$. As with the basic result the scanline result have been verified with the MATLAB script. In figure \ref{fig:acc2_scanWave} a section of the waveform  for the scanline design can be seen.
+The simulation of the optimized implementation shows, that by using the scanline buffering described in section \ref{sec:Optimization}, we have managed to reduce the number of memory transactions to the absolute minimum - pixels are only touched once. This is witnessed by a shorter simulation time of $8.29ms$, which is roughly 3 times faster than the previous design, as it was expected. The throughput is now increased to $120$ \textit{frames pr second} or $12.2Mpix/sec$.\\
+Figure \ref{fig:acc2_scanWave} shows the waveform from processing a single scanline and it illustrates the interleaving pattern of reading and writing an entire scanline from and to memory.
 
 \begin{figure}[H]
 	\centering
@@ -151,6 +150,7 @@ The simulation of the design shows the scanline design is a improvement with onl
 	\caption{Simulation of scanline based design}
 	\label{fig:acc2_scanWave}
 \end{figure}
+Figure \ref{fig:acc2_scanWaveSlide} depicts how the sliding window is being updated in a single clock cycle and how data is moved to and from the scanline buffers.
 
 \begin{figure}[H]
 	\centering
@@ -159,9 +159,11 @@ The simulation of the design shows the scanline design is a improvement with onl
 	\label{fig:acc2_scanWaveSlide}
 \end{figure}
 
-\section{Optimizations using scanline buffers and burst operation of external RAM}
+\section{Burst mode access to external RAM}
 \paragraph*{}
-A further optimization where the extern ram is accessed in burst mode was planed. Some simulation result was obtained but getting a working and verified burst mode optimization, within the project time frame have not been possible. In figure \ref{fig:burst_picture} the obtained result is seen the red blobs indicate errors. The problem is that the wait period at every $128word$ reads gives a \textcolor{red}{problem with the pixelbuffers, saveing a non exiting pixel this is seen from the image of the errors found in figure \ref{fig:pic_burst_err}.} is this correct??. The burst optimization was expected to have a calculation rate of $26.7Mpix/sec$ but this is not confirmed by simulation or implementation.
+Initially we planned for an optimization that would exploit the synchronous mode of the external ram, to achieve the higher clock rate of $80MHz$. Some simulation result are acquired, but we have not been able to provide a working and verified burst mode implementation, within the time frame of this project. Appendix \ref{app:MemBurst} shows an attempt towards, simulating the external memory in continuous burst mode. The implementation consist of a small FSM that simulates the initial latency as well as the row boundary crossing delay that is described in the datasheet \cite{Micron:CellularRAM} of the external memory.
+\paragraph*{}
+Figure \ref{fig:burst_picture} shows the result obtained from a simulation run, the red markings indicates some of the visible errors in the processed image. The image seen in figure \ref{fig:pic_burst_err} is generated from the MATLAB verification script (app.\ref{app:Matlab}) and gives a more visible representation of the distribution of errors (the black color equals to no error, while the white color indicates an error). From the error image it is observed that the errors occurs systematically a at every $128word$. This gives a strong indication that there is a problem with the row boundary crossing, either in the memory simulation or in the accelerator code.  The burst mode optimization was expected to have a throughput close to $80M pix/sec$ but this is not confirmed, since the implementation has newer been tested in hardware.
      
 \begin{figure}[H]
 	\centering

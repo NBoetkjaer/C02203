@@ -208,7 +208,7 @@ With the addition of the scanline buffer, the optimized design is able to proces
 \subsection*{Burst mode memory access}
 \label{sec:burstmode}
 \paragraph*{}
-With the scanline buffer introduced above, each pixel is read extacly once. Hence no further throughput optimizations are possible, without increasing the clock rate. The current clock rate of 12.5MHz is limited by the asynchronous mode, that the external memory is operated under. When operating the RAM in synchronous/burst mode, a clock rate of 80MHz is attainable \cite{Micron:CellularRAM}, more than 6 times faster than the asynchronous mode.
+With the scanline buffer introduced above, each pixel is read extacly once. Hence no further throughput optimizations are possible, without increasing the clock rate. The current clock rate of 12.5MHz is limited by the asynchronous mode, that the external memory is operated under. When operating the RAM in synchronous/burst mode, a clock rate of 80MHz is attainable \cite{Micron:CellularRAM}, more than 6 times faster than the asynchronous mode. Which eventually should result in a throughput close to 80M pixel/sec.
 However, the burst mode imposes a few challenges to the design, such as increased initial latency (3-4 clock cycles) and a more complex control interface. The initial latency will decrease the throughput, since switching between reading and writing bursts will add a delay to the execution. Therefore the throughput will gain by keeping the bursts as long as possible. On the other hand longer bursts requires larger internal buffering of data waiting to be written back to the RAM. Choosing a burst length of one scanline seems like a good compromise between speed and FPGA resources.
 
 \paragraph*{}
