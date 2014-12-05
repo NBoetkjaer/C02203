@@ -1,35 +1,19 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date:    16:07:28 10/04/2012 
--- Design Name: 
--- Module Name:    psram_ctrl - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description: 
+-- -----------------------------------------------------------------------------
 --
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
-----------------------------------------------------------------------------------
+--  Title      :  Simulation of synchronous mode memory interface.
+--             :
+--  Developers :  Anders Greve(s073188) and Nicolas Bøtkjær (s918819) 
+--             :
+--  Purpose    :  This design contains an implementation  
+--             :  that simulate the continuous burst mode of the cellular 
+--             :  RAM.
+--             :
+--  Revision   :  1.0    27-11-14     Initial version
+-- -----------------------------------------------------------------------------
 library IEEE;
 use IEEE.numeric_std.all;
 use IEEE.STD_LOGIC_1164.ALL;
 USE WORK.types.ALL;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 entity memory_burst is
 	generic (
@@ -53,6 +37,7 @@ end memory_burst;
 
 architecture Behavioral of memory_burst is
 	
+	-- Declare the generic (async. memory component)
 	component memory2 is
 		generic (
 		mem_size       : positive;
@@ -128,7 +113,7 @@ begin
 				-- Detect when crossing a row boundary. (simulate synchronous behaviour)
 				if addr_reg(rowBoundarySize) /= addr_next(rowBoundarySize) then -- detect when bit value changes.
 					latencyCount_next <= (others => '0');
-					--dwait <= '0';
+					--dwait <= '0'; ??
 					state_next <= initBurst;
 				end if;
 				

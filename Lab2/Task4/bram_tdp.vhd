@@ -34,11 +34,10 @@ begin
 process(clk)
 begin
     if( rising_edge(clk) ) then
-        a_dout <= mem(to_integer(a_addr));
+        a_dout <= mem(to_integer(a_addr)); -- NOTE: Read before write mode
 		if(a_wr='1') then
             mem(to_integer(a_addr)) := a_din;
-        end if;
-        
+        end if;       
     end if;
 end process;
  
@@ -46,7 +45,7 @@ end process;
 process(clk)
 begin
     if( rising_edge(clk) ) then
-        b_dout <= mem(to_integer(b_addr));
+        b_dout <= mem(to_integer(b_addr)); -- NOTE: Read before write mode
 		if(b_wr='1') then
 			mem(to_integer(b_addr)) := b_din;
         end if;		

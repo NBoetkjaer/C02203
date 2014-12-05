@@ -1,3 +1,14 @@
+%-----------------------------------------------------------------------------
+% Title      :  Matlab verification script.
+%            :
+% Developers :  Anders Greve(s073188) and Nicolas Bøtkjær (s918819) 
+%            :
+% Purpose    :  This script is used to verify correct operation of the 
+%            :  VHDL implementation of the Sobel filtering.
+%            :
+% Revision   :  1.0    28-10-14     Initial version
+%-----------------------------------------------------------------------------
+
 % Script for checking that the Sobel generated image is correct.
 clc, clear all, close all
 
@@ -6,17 +17,18 @@ pic = imread('pic1.pgm');
 % Read ModelSim generated image.
 result = imread('pic1.pgm16.bits_result.pgm');
 % Add borders to src image. ('symmetric' ~ Pad array with mirror reflections of itself.)
-picBorder = double(padarray(pic,[1,1],'symmetric'));
+% Convert to double precision - conv2 only accepts double images.
+picBorder = double(padarray(pic,[1,1],'symmetric')); 
 
 % X gradient filter kernel.
 Gx = [-1 0 1;
-	-2 0 2;
-	-1 0 1];
+      -2 0 2;
+      -1 0 1];
 
 % y gradient filter kernel.
-Gy = [1	2 1;
-	  0	0 0;
-	 -1 -2 -1];
+Gy = [1  2  1;
+      0  0  0;
+     -1 -2 -1];
 	 
 % perform sobel filtering that mimics the operation performed in the VHDL accelerator.
 % - Use |Dx| + |Dy| instead of sqrt(Dx^2 + Dy^2)

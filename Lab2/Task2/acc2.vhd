@@ -1,12 +1,14 @@
 -- -----------------------------------------------------------------------------
 --
---  Title      :  Edge-Detection design project - task 2.
+--  Title      :  Edge-Detection design project
 --             :
---  Developers :  Jonas Benjamin Borch - s052435@student.dtu.dk
+--  Developers :  Anders Greve(s073188) and Nicolas Bøtkjær (s918819) 
 --             :
---  Purpose    :  This design contains an entity for the accelerator that must be build  
---             :  in task two of the Edge Detection design project. It contains an     
---             :  architecture skeleton for the entity as well.                
+--  Purpose    :  This design contains an implementation for the accelerator that performs 
+--             :  a Sobel filtering of an image. The design is using a sliding window
+--             :  in order to reduce the required memory transactions.
+--             :  It is based on the architecture skeleton developed by
+--             :  Jonas Benjamin Borch - s052435@student.dtu.dk
 --             :
 --             :
 --  Revision   :  1.0    7-10-08     Final version
@@ -19,11 +21,6 @@
 --             :  Michael Kristensen -- c973396@student.dtu.dk
 --
 -- -----------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
--- The entity for task two. Notice the additional signals for the memory.        
--- reset is active low.
---------------------------------------------------------------------------------
 
 LIBRARY IEEE;
 USE IEEE.std_logic_1164.ALL;
@@ -38,26 +35,26 @@ ENTITY acc IS
           dataW:	OUT	halfword_t;	-- The data bus.
           req:		OUT	bit_t;	-- Request signal for data.
           rw:		OUT	bit_t;	-- Read/Write signal for data.
-          start:	IN	bit_t;
-          finish:	OUT	bit_t);
+          start:	IN	bit_t;	-- Start signal from 'CPU'
+          finish:	OUT	bit_t);	-- Done with Sobel filtering. 
 END acc;
 
 --------------------------------------------------------------------------------
 -- The description of the accelerator.
 --------------------------------------------------------------------------------
-
 ARCHITECTURE structure OF acc IS
-	-- Image dimension (width must be a even number)
-	constant img_width	: natural := 352;
+	-- Image dimension
+	constant img_width	: natural := 352; -- Width must be an even number. 
 	constant img_height	: natural := 288;
-	constant width_step	: natural := img_width/2;
-	constant last_addr	: natural := width_step * img_height;
-	-- start address of processed image in memory
-	constant mem_start  : natural := width_step * img_height;
+	constant width_step	: natural := img_width/2; -- Number of memory locations for one image row.
+	-- last_addr is a memory address that is one past the last source pixel.
+	constant last_addr	: natural := width_step * img_height; 
+	-- Address of first pixel in destination image.
+	constant mem_start  : natural := width_step * img_height; 
 	
 	-- Declare the state type.
 	type StateType is (idle, startRow, readSetup, readCenter, readAbove, readBelow, calculateFilter, writeData, doneImg);  
-	-- Declare a type that can hold the cached pixel data.	
+	-- Declare a type that can hold the pixel data of the sliding window.
 	subtype RowCache_t is std_logic_vector( 5*8 - 1 downto 0);
 	type PixCache_t is array (2 downto 0) of RowCache_t; -- 3 rows of 5 pixels cache.
 	
@@ -66,7 +63,7 @@ ARCHITECTURE structure OF acc IS
 	signal addr_reg, addr_next : word_t;			-- Address being processed. 
 	signal addr_row_reg, addr_row_next: word_t;		-- Address to start of current row (scan line).
 	signal addr_read_reg, addr_read_next: word_t;	-- Current read address.
-	signal dataW_reg, dataW_next: halfword_t;
+	signal dataW_reg, dataW_next: halfword_t;	-- Register that will hold the output pixel pair (Sobel result).
 	signal rw_int : std_logic;	-- internal signal (wired to rw)
 	
 	-- Signals used for sobel filter calculation.
@@ -80,22 +77,22 @@ ARCHITECTURE structure OF acc IS
 	signal firstColumnR	: std_logic;				-- Signal to indicate if read addr. is on the first column.
 	signal firstColumnW, lastColumnW: std_logic;	-- Signals to indicate if the write addr. is on first and last column.
 	-- Pixel cache holds 15 x 8 bit pixels (organized in 3 rows of 5 pixels)	
-	signal pix_reg, pix_next :PixCache_t;
+	signal pix_reg, pix_next :PixCache_t;	
 	-- Declare convenient aliases into pixels cache.
-	alias A1: byte_t is pix_reg(0)(7 downto 0); 
-	alias A2: byte_t is pix_reg(0)(15 downto 8);
-	alias A3: byte_t is pix_reg(0)(23 downto 16);
-	alias A4: byte_t is pix_reg(1)(7 downto 0); 
+	alias A1: byte_t is pix_reg(0)(7 downto 0);    --   Kernel A
+	alias A2: byte_t is pix_reg(0)(15 downto 8);   -- | A1 A2 A3 |
+	alias A3: byte_t is pix_reg(0)(23 downto 16);  -- | A4 A5 A6 |
+	alias A4: byte_t is pix_reg(1)(7 downto 0);    -- | A7 A8 A9 |
 	alias A5: byte_t is pix_reg(1)(15 downto 8);
 	alias A6: byte_t is pix_reg(1)(23 downto 16);
 	alias A7: byte_t is pix_reg(2)(7 downto 0); 
 	alias A8: byte_t is pix_reg(2)(15 downto 8);
 	alias A9: byte_t is pix_reg(2)(23 downto 16);	
-
-	alias B1: byte_t is pix_reg(0)(15 downto 8); 
-	alias B2: byte_t is pix_reg(0)(23 downto 16);
-	alias B3: byte_t is pix_reg(0)(31 downto 24);
-	alias B4: byte_t is pix_reg(1)(15 downto 8); 
+	
+	alias B1: byte_t is pix_reg(0)(15 downto 8);   --   Kernel B
+	alias B2: byte_t is pix_reg(0)(23 downto 16);  -- | B1 B2 B3 |
+	alias B3: byte_t is pix_reg(0)(31 downto 24);  -- | B4 B5 B6 |
+	alias B4: byte_t is pix_reg(1)(15 downto 8);   -- | B7 B8 B9 |
 	alias B5: byte_t is pix_reg(1)(23 downto 16);
 	alias B6: byte_t is pix_reg(1)(31 downto 24);
 	alias B7: byte_t is pix_reg(2)(15 downto 8); 
@@ -137,7 +134,6 @@ begin
 		finish <= '0';
 		rw_int <= '1';	-- read mode
 		req <= '1'; -- request memory interface.
-		--dataW <= (others => '0');
 		dataW_next <= dataW_reg;
 		
 		addr_next <= addr_reg;
@@ -249,8 +245,7 @@ begin
 				if start = '0' then
 					state_next <= idle;
 				end if;
-		end case;
-		
+		end case;		
 	end process FSMD;
 	
 	
@@ -268,9 +263,10 @@ begin
 		end if;
 	end process registerTransfer;
 	
-	
+
 	-- Combinatorial logic 
 	-- Calculate the Sobel filter on the sliding window.
+	-- Two pixels are processed simultaneously.
 	-- Gx = (a3 + 2*a6 + a9) - (a1 + 2*a4 + a7)
 	gxA_1 <= signed('0' & (unsigned(A3) + unsigned('0' & A6 & '0') + unsigned(A9)));
 	gxA_2 <= signed('0' & (unsigned(A1) + unsigned('0' & A4 & '0') + unsigned(A7)));

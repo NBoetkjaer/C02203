@@ -1,12 +1,15 @@
 -- -----------------------------------------------------------------------------
 --
---  Title      :  Edge-Detection design project - task 2.
+--  Title      :  Edge-Detection design project
 --             :
---  Developers :  Jonas Benjamin Borch - s052435@student.dtu.dk
+--  Developers :  Anders Greve(s073188) and Nicolas Bøtkjær (s918819) 
 --             :
---  Purpose    :  This design contains an entity for the accelerator that must be build  
---             :  in task two of the Edge Detection design project. It contains an     
---             :  architecture skeleton for the entity as well.                
+--  Purpose    :  This design contains an implementation for the accelerator that performs 
+--             :  a Sobel filtering of an image. The design is using a sliding window
+--             :  and scanline buffering of data the to reduce the required memory 
+--             :  transactions to the lowest possible value.
+--             :  It is based on the architecture skeleton developed by
+--             :  Jonas Benjamin Borch - s052435@student.dtu.dk              
 --             :
 --             :
 --  Revision   :  1.0    7-10-08     Final version
@@ -19,11 +22,6 @@
 --             :  Michael Kristensen -- c973396@student.dtu.dk
 --
 -- -----------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
--- The entity for task two. Notice the additional signals for the memory.        
--- reset is active low.
---------------------------------------------------------------------------------
 
 LIBRARY IEEE;
 USE IEEE.std_logic_1164.ALL;
@@ -45,17 +43,17 @@ END acc;
 --------------------------------------------------------------------------------
 -- The description of the accelerator.
 --------------------------------------------------------------------------------
-
 ARCHITECTURE structure OF acc IS
-	-- Image dimension (width must be a even number)
-	constant img_width	: natural := 352;
+
+	-- Image dimension
+	constant img_width	: natural := 352; -- Width must be an even number. 
 	constant img_height	: natural := 288;
-	constant width_step	: natural := img_width/2;
+	constant width_step	: natural := img_width/2; -- Number of memory locations for one image row.
 	constant two_width_step : natural := 2 * width_step;
-	constant last_addr	: natural := width_step * img_height;
-	-- start address of processed image in memory
-	constant mem_start  : natural := width_step * img_height;
-	constant mem_latency: natural := 0;
+	-- last_addr is a memory address that is one past the last source pixel.
+	constant last_addr	: natural := width_step * img_height; 
+	-- Address of first pixel in destination image.
+	constant mem_start  : natural := width_step * img_height; 
 	constant outputBuffer_lag : natural := 3;
 	
 	-- Declare the state type.
@@ -70,7 +68,6 @@ ARCHITECTURE structure OF acc IS
 	signal addr_row_reg, addr_row_next: word_t;		-- Address to start of current row (scan line).	
 	signal dataR_reg, dataR_next: halfword_t;
 	signal rw_int : std_logic;	-- internal signal (wired to rw)
-	signal latencyCount_reg, latencyCount_next : unsigned(2 downto 0);
 	
 	signal col_reg, col_next	: unsigned(7 downto 0);
 	signal a_wr, b_wr, out_wr	: std_logic;
@@ -85,27 +82,26 @@ ARCHITECTURE structure OF acc IS
 	-- maximum range is [-4*255; 4*255] = [-1020,1020]	
 	signal gxA_1, gxA_2, gxB_1, gxB_2, gyA_1, gyA_2, gyB_1, gyB_2: signed(10 downto 0);
 	signal gxA, gxB, gyA, gyB: signed(10 downto 0);
-	signal sobelA, sobelB: unsigned(10 downto 0);	
-	
+	signal sobelA, sobelB: unsigned(10 downto 0);		
 	-- Signals used for border handling.
 	signal firstRow, lastRow		: std_logic;	-- Signals to indicate the first and last scanLine.
 	-- Pixel cache holds 15 x 8 bit pixels (organized in 3 rows of 5 pixels)	
 	signal pix_reg, pix_next :PixCache_t;
 	-- Declare convenient aliases into pixels cache.
-	alias A1: byte_t is pix_reg(0)(7 downto 0); 
-	alias A2: byte_t is pix_reg(0)(15 downto 8);
-	alias A3: byte_t is pix_reg(0)(23 downto 16);
-	alias A4: byte_t is pix_reg(1)(7 downto 0); 
+	alias A1: byte_t is pix_reg(0)(7 downto 0);    --   Kernel A
+	alias A2: byte_t is pix_reg(0)(15 downto 8);   -- | A1 A2 A3 |
+	alias A3: byte_t is pix_reg(0)(23 downto 16);  -- | A4 A5 A6 |
+	alias A4: byte_t is pix_reg(1)(7 downto 0);    -- | A7 A8 A9 |
 	alias A5: byte_t is pix_reg(1)(15 downto 8);
 	alias A6: byte_t is pix_reg(1)(23 downto 16);
 	alias A7: byte_t is pix_reg(2)(7 downto 0); 
 	alias A8: byte_t is pix_reg(2)(15 downto 8);
 	alias A9: byte_t is pix_reg(2)(23 downto 16);	
-
-	alias B1: byte_t is pix_reg(0)(15 downto 8); 
-	alias B2: byte_t is pix_reg(0)(23 downto 16);
-	alias B3: byte_t is pix_reg(0)(31 downto 24);
-	alias B4: byte_t is pix_reg(1)(15 downto 8); 
+	
+	alias B1: byte_t is pix_reg(0)(15 downto 8);   --   Kernel B
+	alias B2: byte_t is pix_reg(0)(23 downto 16);  -- | B1 B2 B3 |
+	alias B3: byte_t is pix_reg(0)(31 downto 24);  -- | B4 B5 B6 |
+	alias B4: byte_t is pix_reg(1)(15 downto 8);   -- | B7 B8 B9 |
 	alias B5: byte_t is pix_reg(1)(23 downto 16);
 	alias B6: byte_t is pix_reg(1)(31 downto 24);
 	alias B7: byte_t is pix_reg(2)(15 downto 8); 
@@ -154,6 +150,8 @@ begin
 			b_din	=> b_din,
 			b_dout	=> b_dout
 		);
+	-- Strictly speaking the output buffer only requires a single port block RAM
+	-- but by convenience we re-use the dual port block ram component.
 	OutputBuffer : bram_tdp
 		generic map(
 			DATA_WIDTH =>  16,
@@ -173,22 +171,6 @@ begin
 			b_dout	=> open
 		);
 
-	-----------------------------
-	-- Overview of algorithm flow.
-	-- Show how the pixels are access pairwise.
-	--   0 1 2 3	: Memory address.
-	--  xABCDEFGHx	: Image (width must be even) A-H is pixels x is the border.
-	--  AABCD		: step (1)	: read addr. 0 and 1 (first column).
-	--   AB			: 			: write addr. 0 + offset.
-	--    BCDEF  	: step (2)	: read addr. 2.
-	--     CD		: 			: write addr. 1 + offset
-	-- 				: ....
-	--  	DEFGH	: step (n-1): read addr. (n-1).
-	--  	 EF		: 			: write addr. (n-1) - 1 + offset
-	--  	  FGHH#	: step (n)	: no read (last column) (# = don't care)
-	--  	   GH	: 			: write addr. n - 1 + offset
-	-----------------------------
-
 	rw <= rw_int; -- Wire internal signal to entity out port .
 	-- Assign address to either read or write address. Note that write address is lagging one scanline behind.
 	addr <= addr_reg when rw_int = '1' else  std_logic_vector(unsigned(addr_reg) + (mem_start - width_step));	
@@ -196,35 +178,34 @@ begin
 	firstRow		<= '1' when unsigned(addr_row_reg) = 0 else '0';
 	lastRow 		<= '1' when unsigned(addr_row_reg) = last_addr else '0';
 	
-	a_addr <= scan0ptr_reg; -- Don't used the registered signal (block ram address is already registered)
+	a_addr <= scan0ptr_reg;
 	b_addr <= scan1ptr_reg;
 	
 	FSMD: process(state, start, firstRow, lastRow, dataR, dataR_reg, addr_reg, addr_row_reg, pix_reg
 			, scan0ptr_reg, scan1ptr_reg, a_dout, b_dout, sobelA, sobelB
-			, latencyCount_reg, addr_next, col_next, col_reg, out_dout, mode_reg)
+			, addr_next, col_next, col_reg, out_dout, mode_reg)
 	begin
+		-- Default values
 		mode_next <= mode_reg;
 		a_wr <= '0';
 		b_wr <= '0';
 		out_wr <= '0';
 		col_next <= col_reg;
 		
-		a_din <= dataR;
-		b_din <= dataR;
+		a_din <= dataR;	-- Always write to the oldest scanline in the buffer.
+		b_din <= dataR; -- When processing first line we write to both scanline buffers.
 		out_addr <= (others => '0');
 		out_din <= byte_t(sobelB(10 downto 3)) & byte_t(sobelA(10 downto 3)); -- Divide by 8.		
-		
 		scan0ptr_next <= scan0ptr_reg;
 		scan1ptr_next <= scan1ptr_reg;
-		-- Default values
+
 		state_next <= state;
 		finish <= '0';
 		rw_int <= '1';	-- read mode
 		req <= '1'; -- request memory interface.
-		latencyCount_next <= (others =>'0');
-		dataR_next <= dataR_reg;
-		dataW <= (others => '0');
 		
+		dataW <= (others => '0');
+		dataR_next <= dataR_reg;
 		addr_next <= addr_reg;
 		addr_row_next <= addr_row_reg;
 		pix_next <= pix_reg;
@@ -239,6 +220,7 @@ begin
 				scan0ptr_next <= (others => '0');
 				scan1ptr_next <= to_unsigned(width_step, scan1ptr_next'length);
 				mode_next <= '0'; -- Read mode
+				
 			when startRow =>
 				state_next <= startRow;
 				if lastRow = '1'  and mode_reg = '0'then
@@ -246,14 +228,11 @@ begin
 				else
 					addr_next <= addr_row_reg; -- Set addr to start of row
 				end if; 
-				latencyCount_next <= latencyCount_reg + 1;
-				if latencyCount_reg = mem_latency then
-					if mode_reg = '0' then 
-						state_next <= readData;
-					else
-						state_next <= writeData;
-					end if;
-				end if;				
+				if mode_reg = '0' then 
+					state_next <= readData;
+				else
+					state_next <= writeData;
+				end if;
 				col_next <= (others => '0'); -- reset the column counter
 				 -- Set out_addr to ensure the value is ready when entering writeData state.
 				out_addr <= (others => '0');
@@ -337,17 +316,16 @@ begin
 						scan1ptr_next <= (others => '0');
 					end if;						
 				end if;	
+				
 			when doneImg =>
 				finish <= '1';
 				req <= '0';	-- release memory request
 				if start = '0' then
 					state_next <= idle;
 				end if;
-		end case;
-		
+		end case;		
 	end process FSMD;
-	
-	
+		
 	registerTransfer: process(clk, reset)
 	begin
 		if reset = '1' then
@@ -356,17 +334,14 @@ begin
 			state <= state_next;
 			mode_reg <= mode_next;
 			scan0ptr_reg <= scan0ptr_next;
-			scan1ptr_reg <= scan1ptr_next;
-			latencyCount_reg <= latencyCount_next;
-			
+			scan1ptr_reg <= scan1ptr_next;			
 			col_reg <= col_next;
 			addr_reg <= addr_next;
 			addr_row_reg <= addr_row_next;
 			pix_reg <= pix_next;
 			dataR_reg <= dataR_next;
 		end if;
-	end process registerTransfer;
-	
+	end process registerTransfer;	
 
 	-- Combinatorial logic 
 	-- Calculate the Sobel filter on the sliding window.
