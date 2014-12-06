@@ -163,8 +163,8 @@ Because figure \ref{fig:ASM_HW} shows a comprehensive ASMD diagram it is possibl
 \paragraph*{}
 With knowledge about the arithmetic of the Sobel operator (equation \ref{eq:sobel_calc} and \ref{eq:sobel_abs} ), the required adders/subtractors can be estimated as well.
 Table \ref{tab:designAdders} gives an overview of the arithmetic complexity of the accelerator design. The 7 adders stated under 'Address logic', is slightly more than the 4 adders that is directly observed from the ASMD diagram.
-The 3 extra adder stems from the signals \emph{firstColumnW} and \emph{lastColoumnW}, and the calculation of the output address, which is a constant offset from the current address \emph{addr\_reg}.
- 
+The 3 extra adder stems from the signals \emph{firstColumnW} and \emph{lastColoumnW}, and the calculation of the output address, which is a constant offset from the current address \emph{addr\_reg}.\\
+
 \begin{table}[h]
 	\centering
 	\begin{tabular}{lr}
@@ -177,6 +177,8 @@ The 3 extra adder stems from the signals \emph{firstColumnW} and \emph{lastColou
 	\caption{Estimated number of Adders and subtractors.}
 	\label{tab:designAdders}
 \end{table}
+
+Appendix \ref{app:accBlockDiagram} shows a RTL schematic of the proposed design. To reduce the complexity of the schematic, some details are omitted, but it still gives a good understanding of the hardware complexity that is to be expected from the synthesis tool.
 
 \begin{figure}[H]
 	\centering
